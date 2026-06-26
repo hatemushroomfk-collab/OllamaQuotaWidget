@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="noti_text_title">#FFFFFF</color>
+    <color name="noti_text_content">#DDDDDD</color>
+    <color name="noti_text_muted">#BBBBBB</color>
+</resources>

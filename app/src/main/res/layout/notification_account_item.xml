@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_marginBottom="8dp">
+
+    <TextView
+        android:id="@+id/tvAccName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="계정"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
+        android:layout_marginTop="4dp"/>
+        
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <TextView
+            android:id="@+id/tvAccSessionLabel"
+            android:layout_width="50dp"
+            android:layout_height="wrap_content"
+            android:text="S"
+            android:textSize="10sp"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Info"/>
+        <ProgressBar
+            android:id="@+id/pbAccSession"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="100"
+            android:progress="0" />
+        <TextView
+            android:id="@+id/tvAccSessionVal"
+            android:layout_width="35dp"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:textSize="10sp"
+            android:text="0%"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Info" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="50dp"
+            android:layout_height="wrap_content"
+            android:text="W"
+            android:textSize="10sp"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Info"/>
+        <ProgressBar
+            android:id="@+id/pbAccWeekly"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="100"
+            android:progress="0" />
+        <TextView
+            android:id="@+id/tvAccWeeklyVal"
+            android:layout_width="35dp"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:textSize="10sp"
+            android:text="0%"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Info" />
+    </LinearLayout>
+
+</LinearLayout>

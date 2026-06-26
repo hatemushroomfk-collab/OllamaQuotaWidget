@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Ollama Quota</string>
+    <string name="account_1">계정 1</string>
+    <string name="account_2">계정 2</string>
+    <string name="login">로그인하기</string>
+    <string name="logged_in">로그인 완료 (쿠키 저장됨)</string>
+    <string name="not_logged_in">로그인 필요</string>
+    <string name="refresh_widget">위젯 새로고침</string>
+
+    <string-array name="alert_types">
+        <item>세션 (Session)</item>
+        <item>주간 (Weekly)</item>
+    </string-array>
+</resources>
