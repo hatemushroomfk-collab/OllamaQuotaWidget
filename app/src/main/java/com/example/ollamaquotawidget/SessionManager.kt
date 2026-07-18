@@ -23,9 +23,16 @@ data class Account(
     var alertRulesJson: String, // JSON array of AlertRule
     var sessionResetTime: String,
     var alertOnReset: Boolean,
-    var previousSessionVal: Int,
+    var previousSessionVal: Long,  // 소수 1자리 보존 (예: "1.7%" → 17L)
     var resetTimeDisplayMode: Int,
-    var sessionResetTimestamp: Long
+    var sessionResetTimestamp: Long,
+    var sessionModelsJson: String = "[]",  // [{model, requests, share, color}]
+    var weeklyModelsJson: String = "[]",   // [{model, requests, share, color}]
+    var resetTimeIso: String = "",          // ISO 8601 timestamp (e.g. "2026-07-18T07:00:00Z")
+    // 모델별 표시 토글 (expanded 알림창 / 위젯 / 앱에서 적용)
+    var showModelUsage: Boolean = true,           // 모델별 usage %
+    var showModelRequests: Boolean = true,         // 모델별 requests 수
+    var showModelUsagePerReq: Boolean = true       // 모델별 usage/requests 비율
 )
 
 object SessionManager {
@@ -103,9 +110,27 @@ object SessionManager {
                         alertRulesJson = rulesJson,
                         sessionResetTime = obj.optString("sessionResetTime", ""),
                         alertOnReset = obj.optBoolean("alertOnReset", true),
-                        previousSessionVal = obj.optInt("previousSessionVal", -1),
+                        previousSessionVal = run {
+                            // 마이그레이션: 기존 Int 값(예: 1 = 1%)을 ×10 보정 (→ 10L = 1.0%)
+                            // 새 형식은 소수 1자리 보존 (예: 1.7% → 17L)
+                            val raw = obj.opt("previousSessionVal")
+                            when (raw) {
+                                is Number -> {
+                                    val v = raw.toLong()
+                                    // 기존 값이 ×10 안 된 구버전 감지: 0~100 범위면 ×10 보정
+                                    if (v in 0..100) v * 10 else v
+                                }
+                                else -> -10L  // -1.0% (미설정)
+                            }
+                        },
                         resetTimeDisplayMode = obj.optInt("resetTimeDisplayMode", 0),
-                        sessionResetTimestamp = obj.optLong("sessionResetTimestamp", 0L)
+                        sessionResetTimestamp = obj.optLong("sessionResetTimestamp", 0L),
+                        sessionModelsJson = obj.optString("sessionModelsJson", "[]"),
+                        weeklyModelsJson = obj.optString("weeklyModelsJson", "[]"),
+                        resetTimeIso = obj.optString("resetTimeIso", ""),
+                        showModelUsage = obj.optBoolean("showModelUsage", true),
+                        showModelRequests = obj.optBoolean("showModelRequests", true),
+                        showModelUsagePerReq = obj.optBoolean("showModelUsagePerReq", true)
                     )
                 )
             }
@@ -132,6 +157,12 @@ object SessionManager {
             obj.put("previousSessionVal", acc.previousSessionVal)
             obj.put("resetTimeDisplayMode", acc.resetTimeDisplayMode)
             obj.put("sessionResetTimestamp", acc.sessionResetTimestamp)
+            obj.put("sessionModelsJson", acc.sessionModelsJson)
+            obj.put("weeklyModelsJson", acc.weeklyModelsJson)
+            obj.put("resetTimeIso", acc.resetTimeIso)
+            obj.put("showModelUsage", acc.showModelUsage)
+            obj.put("showModelRequests", acc.showModelRequests)
+            obj.put("showModelUsagePerReq", acc.showModelUsagePerReq)
             array.put(obj)
         }
         getPrefs(context).edit().putString(KEY_ACCOUNTS, array.toString()).apply()
@@ -144,5 +175,55 @@ object SessionManager {
             accounts[index].cookie = cookie
             saveAccounts(context, accounts)
         }
+    }
+
+    // ===== 알림 상태 영속화 (서비스 재시작 시 중복 알림 방지) =====
+    // hasAlertedRule: { ruleId -> Boolean }
+    // hasAlertedLogin: { accId  -> Boolean }
+    private const val KEY_ALERTED_RULES = "alerted_rules_json"
+    private const val KEY_ALERTED_LOGIN = "alerted_login_json"
+
+    fun getAlertedRules(context: Context): Map<String, Boolean> {
+        val jsonStr = getPrefs(context).getString(KEY_ALERTED_RULES, "{}") ?: "{}"
+        return try {
+            val obj = JSONObject(jsonStr)
+            val map = mutableMapOf<String, Boolean>()
+            val keys = obj.keys()
+            while (keys.hasNext()) {
+                val k = keys.next()
+                map[k] = obj.getBoolean(k)
+            }
+            map
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+    fun saveAlertedRules(context: Context, map: Map<String, Boolean>) {
+        val obj = JSONObject()
+        for ((k, v) in map) obj.put(k, v)
+        getPrefs(context).edit().putString(KEY_ALERTED_RULES, obj.toString()).apply()
+    }
+
+    fun getAlertedLogin(context: Context): Map<String, Boolean> {
+        val jsonStr = getPrefs(context).getString(KEY_ALERTED_LOGIN, "{}") ?: "{}"
+        return try {
+            val obj = JSONObject(jsonStr)
+            val map = mutableMapOf<String, Boolean>()
+            val keys = obj.keys()
+            while (keys.hasNext()) {
+                val k = keys.next()
+                map[k] = obj.getBoolean(k)
+            }
+            map
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+    fun saveAlertedLogin(context: Context, map: Map<String, Boolean>) {
+        val obj = JSONObject()
+        for ((k, v) in map) obj.put(k, v)
+        getPrefs(context).edit().putString(KEY_ALERTED_LOGIN, obj.toString()).apply()
     }
 }

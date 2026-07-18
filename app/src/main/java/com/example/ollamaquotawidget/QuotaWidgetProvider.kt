@@ -34,21 +34,9 @@ class QuotaWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
-        private fun parseVal(quota: String, prefix: String): String {
-            try {
-                val split = quota.split("|")
-                for (part in split) {
-                    if (part.trim().startsWith(prefix)) {
-                        return part.substringAfter(":").trim()
-                    }
-                }
-            } catch (e: Exception) {}
-            return "0%"
-        }
+        private fun parseVal(quota: String, prefix: String): String = QuotaParser.parseVal(quota, prefix)
 
-        private fun parsePercent(str: String): Int {
-            return try { str.replace("%", "").toFloat().toInt() } catch (e: Exception) { 0 }
-        }
+        private fun parsePercent(str: String): Int = QuotaParser.parsePercent(str)
 
         fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
             val views = RemoteViews(context.packageName, R.layout.widget_quota)
@@ -61,27 +49,39 @@ class QuotaWidgetProvider : AppWidgetProvider() {
                 val wVal = parseVal(acc.quotaSummary, "W")
                 val sInt = parsePercent(sVal)
                 val wInt = parsePercent(wVal)
-                
+
                 val itemView = RemoteViews(context.packageName, R.layout.widget_account_item)
-                
+
                 val displayStr = if (acc.resetTimeDisplayMode == 1 && acc.sessionResetTimestamp > 0) {
                     java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(acc.sessionResetTimestamp))
                 } else {
                     acc.sessionResetTime
                 }
-                
+
                 val nameLabel = if (displayStr.isNotEmpty()) "${acc.name} (↻ $displayStr)" else acc.name
                 itemView.setTextViewText(R.id.tvAccName, nameLabel)
                 itemView.setTextViewText(R.id.tvAccSessionLabel, "S")
-                
+
                 itemView.setTextViewText(R.id.tvAccSessionVal, sVal)
                 itemView.setProgressBar(R.id.pbAccSession, 100, sInt, false)
                 itemView.setTextViewText(R.id.tvAccWeeklyVal, wVal)
                 itemView.setProgressBar(R.id.pbAccWeekly, 100, wInt, false)
-                
+
+                // 모델별 사용량 바인딩 (토글 플래그 적용)
+                val sessionModelsStr = QuotaParser.formatModels(
+                    acc.sessionModelsJson, sVal,
+                    acc.showModelUsage, acc.showModelRequests, acc.showModelUsagePerReq
+                )
+                val weeklyModelsStr = QuotaParser.formatModels(
+                    acc.weeklyModelsJson, wVal,
+                    acc.showModelUsage, acc.showModelRequests, acc.showModelUsagePerReq
+                )
+                itemView.setTextViewText(R.id.tvAccSessionModels, if (sessionModelsStr.isNotEmpty()) "S: $sessionModelsStr" else "")
+                itemView.setTextViewText(R.id.tvAccWeeklyModels, if (weeklyModelsStr.isNotEmpty()) "W: $weeklyModelsStr" else "")
+
                 views.addView(R.id.llAccountsContainer, itemView)
             }
-            
+
             val timeString = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
             views.setTextViewText(R.id.tvUpdateTime, "Updated: $timeString")
 

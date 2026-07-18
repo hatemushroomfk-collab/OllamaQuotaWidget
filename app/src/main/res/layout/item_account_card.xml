@@ -78,6 +78,54 @@
         android:layout_height="wrap_content"
         android:textSize="12sp"
         android:text="상세 내역 없음"
+        android:layout_marginBottom="8dp" />
+
+    <!-- 모델별 사용량 표시 영역 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="모델별 사용량"
+        android:textStyle="bold"
+        android:textSize="13sp"
+        android:layout_marginBottom="4dp" />
+
+    <!-- 모델별 표시 항목 토글 -->
+    <CheckBox
+        android:id="@+id/cbShowModelUsage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="모델별 usage % 표시"
+        android:textSize="11sp" />
+
+    <CheckBox
+        android:id="@+id/cbShowModelRequests"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="모델별 request 수 표시"
+        android:textSize="11sp" />
+
+    <CheckBox
+        android:id="@+id/cbShowModelUsagePerReq"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="모델별 usage/requests 비율 표시"
+        android:textSize="11sp"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tvItemSessionModels"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="11sp"
+        android:text="세션: -"
+        android:layout_marginBottom="2dp" />
+
+    <TextView
+        android:id="@+id/tvItemWeeklyModels"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="11sp"
+        android:text="주간: -"
         android:layout_marginBottom="12dp" />
 
     <View

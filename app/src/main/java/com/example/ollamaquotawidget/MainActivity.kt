@@ -146,7 +146,39 @@ class MainActivity : AppCompatActivity() {
             etName.setText(acc.name)
             tvStatus.text = if (acc.cookie.isNotEmpty()) getString(R.string.logged_in) else getString(R.string.not_logged_in)
             tvDetail.text = formatDetailJson(acc.quotaDetails)
-            
+
+            // 모델별 사용량 표시 + 토글 UI
+            val tvSessionModels = view.findViewById<TextView>(R.id.tvItemSessionModels)
+            val tvWeeklyModels = view.findViewById<TextView>(R.id.tvItemWeeklyModels)
+            val cbShowModelUsage = view.findViewById<android.widget.CheckBox>(R.id.cbShowModelUsage)
+            val cbShowModelRequests = view.findViewById<android.widget.CheckBox>(R.id.cbShowModelRequests)
+            val cbShowModelUsagePerReq = view.findViewById<android.widget.CheckBox>(R.id.cbShowModelUsagePerReq)
+
+            cbShowModelUsage.isChecked = acc.showModelUsage
+            cbShowModelRequests.isChecked = acc.showModelRequests
+            cbShowModelUsagePerReq.isChecked = acc.showModelUsagePerReq
+
+            val sVal = QuotaParser.parseVal(acc.quotaSummary, "S")
+            val wVal = QuotaParser.parseVal(acc.quotaSummary, "W")
+
+            // 체크박스 변경 시 즉시 미리보기 갱신
+            val updatePreview = {
+                val sessionStr = QuotaParser.formatModels(
+                    acc.sessionModelsJson, sVal,
+                    cbShowModelUsage.isChecked, cbShowModelRequests.isChecked, cbShowModelUsagePerReq.isChecked
+                )
+                val weeklyStr = QuotaParser.formatModels(
+                    acc.weeklyModelsJson, wVal,
+                    cbShowModelUsage.isChecked, cbShowModelRequests.isChecked, cbShowModelUsagePerReq.isChecked
+                )
+                tvSessionModels.text = if (sessionStr.isNotEmpty()) "세션: $sessionStr" else "세션: -"
+                tvWeeklyModels.text = if (weeklyStr.isNotEmpty()) "주간: $weeklyStr" else "주간: -"
+            }
+            cbShowModelUsage.setOnCheckedChangeListener { _, _ -> updatePreview() }
+            cbShowModelRequests.setOnCheckedChangeListener { _, _ -> updatePreview() }
+            cbShowModelUsagePerReq.setOnCheckedChangeListener { _, _ -> updatePreview() }
+            updatePreview()
+
             cbCollapsed.isChecked = acc.showCollapsed
             cbExpanded.isChecked = acc.showExpanded
             cbAlertOnReset.isChecked = acc.alertOnReset
@@ -243,6 +275,9 @@ class MainActivity : AppCompatActivity() {
                     target.showExpanded = cbExpanded.isChecked
                     target.alertOnReset = cbAlertOnReset.isChecked
                     target.resetTimeDisplayMode = spinnerResetTimeMode.selectedItemPosition
+                    target.showModelUsage = cbShowModelUsage.isChecked
+                    target.showModelRequests = cbShowModelRequests.isChecked
+                    target.showModelUsagePerReq = cbShowModelUsagePerReq.isChecked
                     
                     // Gather alerts
                     val newRulesArray = JSONArray()

@@ -73,4 +73,26 @@
             android:textColor="#BBBBBB"/>
     </LinearLayout>
 
+    <!-- 모델별 사용량 요약 (세션/주간) -->
+    <TextView
+        android:id="@+id/tvAccSessionModels"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="9sp"
+        android:textColor="#999999"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:layout_marginTop="2dp"
+        android:layout_marginStart="50dp" />
+
+    <TextView
+        android:id="@+id/tvAccWeeklyModels"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="9sp"
+        android:textColor="#999999"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:layout_marginStart="50dp" />
+
 </LinearLayout>
