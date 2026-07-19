@@ -168,8 +168,15 @@ object QuotaParser {
             return loginRequiredResult()
         }
 
-        val sessionVal = sessionRegex.find(bodyText)?.groups?.get(1)?.value ?: "0%"
-        val weeklyVal = weeklyRegex.find(bodyText)?.groups?.get(1)?.value ?: "0%"
+        // 전체 사용량 % — aria-label에서 직접 파싱 (HTML 구조 변경에 강함)
+        // 1차: aria-label="Session usage 1.7% used" 속성에서 추출
+        // 2차 fallback: body 텍스트 정규식 (기존 방식)
+        val sessionVal = extractUsageFromAriaLabel(document, "Session usage")
+            ?: sessionRegex.find(bodyText)?.groups?.get(1)?.value
+            ?: "0%"
+        val weeklyVal = extractUsageFromAriaLabel(document, "Weekly usage")
+            ?: weeklyRegex.find(bodyText)?.groups?.get(1)?.value
+            ?: "0%"
         val sessionResetVal = extractResetText(bodyText)
         val resetIso = extractResetIso(document)
 
@@ -189,6 +196,22 @@ object QuotaParser {
             sessionModelsJson = sessionModelsJson,
             weeklyModelsJson = weeklyModelsJson
         )
+    }
+
+    /**
+     * div[data-usage-track][aria-label="Session usage 1.7% used"]에서 % 추출.
+     * 정규식 fallback보다 구조 변경에 강함. 파싱 실패 시 null 반환.
+     */
+    private fun extractUsageFromAriaLabel(document: org.jsoup.nodes.Document, prefix: String): String? {
+        return try {
+            val track = document.selectFirst("div[data-usage-track][aria-label^=$prefix]")
+                ?: return null
+            val ariaLabel = track.attr("aria-label")  // "Session usage 1.7% used"
+            val m = Regex("([0-9.]+%)").find(ariaLabel)
+            m?.groups?.get(1)?.value
+        } catch (e: Exception) {
+            null
+        }
     }
 
     fun loginRequiredResult(): ScrapeResult = ScrapeResult(

@@ -12,6 +12,9 @@
 # Debug screenshots
 screen*.png
 
+# UI preview (개발용)
+ui_preview.*
+
 # OS files
 .DS_Store
 Thumbs.db

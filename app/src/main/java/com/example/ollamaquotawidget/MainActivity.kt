@@ -46,6 +46,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // 기존 평문 쿠키를 암호화 저장소로 마이그레이션 (최초 1회만 실행)
+        SessionManager.migrateCookiesIfNeeded(this)
+
         llAccountsContainer = findViewById(R.id.llAccountsContainer)
         btnAddAccount = findViewById(R.id.btnAddAccount)
         btnToggleService = findViewById(R.id.btnToggleService)

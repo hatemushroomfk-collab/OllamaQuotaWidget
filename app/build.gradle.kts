@@ -41,13 +41,13 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    
-    // WorkManager for background tasks
-    implementation("androidx.work:work-runtime-ktx:2.9.0")
-    
+
     // Jsoup for HTML parsing
     implementation("org.jsoup:jsoup:1.17.2")
     
     // Preferences DataStore / SharedPrefs
     implementation("androidx.preference:preference-ktx:1.2.1")
+
+    // EncryptedSharedPreferences (쿠키 암호화 저장)
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 }

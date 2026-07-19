@@ -27,9 +27,9 @@ class QuotaForegroundService : Service() {
     private val scope = CoroutineScope(Dispatchers.IO + Job())
     private var updateJob: Job? = null
 
-    // 1회성 알림 방지 상태 맵 — SharedPreferences에 영속화되어 서비스 재시작 시에도 유지
-    private val hasAlertedRule = mutableMapOf<String, Boolean>()
-    private val hasAlertedLogin = mutableMapOf<String, Boolean>()
+    // 1회성 알림 방지 상태 맵 — 스레드 안전 + SharedPreferences에 영속화
+    private val hasAlertedRule = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
+    private val hasAlertedLogin = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
 
     companion object {
         const val ACTION_FORCE_REFRESH = "ACTION_FORCE_REFRESH"
@@ -123,10 +123,6 @@ class QuotaForegroundService : Service() {
         }
     }
     
-    private fun parsePercent(str: String): Int = QuotaParser.parsePercent(str)
-
-    private fun parseVal(quota: String, prefix: String): String = QuotaParser.parseVal(quota, prefix)
-
     private fun buildNotification(accounts: List<Account>): Notification {
         val pendingIntent = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java),
@@ -179,10 +175,10 @@ class QuotaForegroundService : Service() {
         
         val expandedAccounts = accounts.filter { it.showExpanded }
         for (acc in expandedAccounts) {
-            val sVal = parseVal(acc.quotaSummary, "S")
-            val wVal = parseVal(acc.quotaSummary, "W")
-            val sInt = parsePercent(sVal)
-            val wInt = parsePercent(wVal)
+            val sVal = QuotaParser.parseVal(acc.quotaSummary, "S")
+            val wVal = QuotaParser.parseVal(acc.quotaSummary, "W")
+            val sInt = QuotaParser.parsePercent(sVal)
+            val wInt = QuotaParser.parsePercent(wVal)
 
             val itemView = RemoteViews(packageName, R.layout.notification_account_item)
 
@@ -284,6 +280,7 @@ class QuotaForegroundService : Service() {
             val document = Jsoup.connect("https://ollama.com/settings")
                 .header("Cookie", cookieString)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+                .timeout(15000)
                 .get()
 
             val result = QuotaParser.parse(document)
@@ -360,7 +357,8 @@ class QuotaForegroundService : Service() {
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         // 알림 ID: 1000 대역 (quota alert). ruleId 해시로 각 규칙마다 고유 ID.
-        val notifId = 1000 + (ruleId.hashCode() and 0x3FF) // 1000~1999
+        // 0xFFFF 마스킹 (65536 슬롯) — 계정/규칙 많아도 충돌 확률 극히 낮음
+        val notifId = 1000 + (ruleId.hashCode() and 0xFFFF) // 1000~65535
         manager.notify(notifId, builder.build())
     }
 
@@ -381,7 +379,7 @@ class QuotaForegroundService : Service() {
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         // 알림 ID: 3000 대역 (login alert). accId 해시로 각 계정마다 고유 ID.
-        val notifId = 3000 + (accId.hashCode() and 0x3FF) // 3000~3999
+        val notifId = 3000 + (accId.hashCode() and 0xFFFF) // 3000~65535
         manager.notify(notifId, builder.build())
 
         hasAlertedLogin[accId] = true
@@ -403,7 +401,7 @@ class QuotaForegroundService : Service() {
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         // 알림 ID: 2000 대역 (reset alert). accId 해시로 각 계정마다 고유 ID.
-        val notifId = 2000 + (accId.hashCode() and 0x3FF) // 2000~2999
+        val notifId = 2000 + (accId.hashCode() and 0xFFFF) // 2000~65535
         manager.notify(notifId, builder.build())
     }
 }

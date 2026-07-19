@@ -7,8 +7,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 
 class QuotaWidgetProvider : AppWidgetProvider() {
 
@@ -34,10 +32,6 @@ class QuotaWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
-        private fun parseVal(quota: String, prefix: String): String = QuotaParser.parseVal(quota, prefix)
-
-        private fun parsePercent(str: String): Int = QuotaParser.parsePercent(str)
-
         fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
             val views = RemoteViews(context.packageName, R.layout.widget_quota)
 
@@ -45,10 +39,10 @@ class QuotaWidgetProvider : AppWidgetProvider() {
 
             val accounts = SessionManager.getAccounts(context).filter { it.showExpanded }
             for (acc in accounts) {
-                val sVal = parseVal(acc.quotaSummary, "S")
-                val wVal = parseVal(acc.quotaSummary, "W")
-                val sInt = parsePercent(sVal)
-                val wInt = parsePercent(wVal)
+                val sVal = QuotaParser.parseVal(acc.quotaSummary, "S")
+                val wVal = QuotaParser.parseVal(acc.quotaSummary, "W")
+                val sInt = QuotaParser.parsePercent(sVal)
+                val wInt = QuotaParser.parsePercent(wVal)
 
                 val itemView = RemoteViews(context.packageName, R.layout.widget_account_item)
 

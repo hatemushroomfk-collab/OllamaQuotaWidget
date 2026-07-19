@@ -2,6 +2,8 @@ package com.example.ollamaquotawidget
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -103,7 +105,7 @@ object SessionManager {
                     Account(
                         id = obj.optString("id", java.util.UUID.randomUUID().toString()),
                         name = obj.optString("name", "계정"),
-                        cookie = obj.optString("cookie", ""),
+                        cookie = getCookie(context, obj.optString("id", "")),  // 암호화 저장소에서 로드
                         quotaSummary = obj.optString("quotaSummary", "데이터 없음"),
                         quotaDetails = obj.optString("quotaDetails", "[]"),
                         showCollapsed = obj.optBoolean("showCollapsed", true),
@@ -112,14 +114,15 @@ object SessionManager {
                         sessionResetTime = obj.optString("sessionResetTime", ""),
                         alertOnReset = obj.optBoolean("alertOnReset", true),
                         previousSessionVal = run {
-                            // 마이그레이션: 기존 Int 값(예: 1 = 1%)을 ×10 보정 (→ 10L = 1.0%)
-                            // 새 형식은 소수 1자리 보존 (예: 1.7% → 17L)
+                            // 마이그레이션: 구버전 Int 값(-1 = 미설정)을 새 형식(-10L)으로 보정.
+                            // 새 형식은 소수 1자리 보존 (예: 1.7% → 17L, 0% → 0L).
+                            // 주의: 0~100 범위를 구버전으로 오판하지 않도록
+                            //       음수(-1)만 구버전 신호로 사용.
                             try {
                                 val v = obj.optLong("previousSessionVal", -10L)
-                                // 기존 값이 ×10 안 된 구버전 감지: 0~100 범위면 ×10 보정
-                                if (v in 0..100) v * 10 else v
+                                if (v == -1L) -10L else v  // 구버전 -1 → -10L
                             } catch (e: Exception) {
-                                -10L  // -1.0% (미설정)
+                                -10L
                             }
                         },
                         resetTimeDisplayMode = obj.optInt("resetTimeDisplayMode", 0),
@@ -143,10 +146,14 @@ object SessionManager {
     fun saveAccounts(context: Context, accounts: List<Account>) {
         val array = JSONArray()
         for (acc in accounts) {
+            // 쿠키는 암호화 저장소에 저장 (평문 JSON에 넣지 않음)
+            if (acc.id.isNotEmpty()) {
+                saveCookie(context, acc.id, acc.cookie)
+            }
             val obj = JSONObject()
             obj.put("id", acc.id)
             obj.put("name", acc.name)
-            obj.put("cookie", acc.cookie)
+            obj.put("cookie", "")  // 평문에는 빈 문자열 (암호화 저장소에 있음)
             obj.put("quotaSummary", acc.quotaSummary)
             obj.put("quotaDetails", acc.quotaDetails)
             obj.put("showCollapsed", acc.showCollapsed)
@@ -170,12 +177,8 @@ object SessionManager {
     }
 
     fun updateAccountCookie(context: Context, id: String, cookie: String) {
-        val accounts = getAccounts(context).toMutableList()
-        val index = accounts.indexOfFirst { it.id == id }
-        if (index != -1) {
-            accounts[index].cookie = cookie
-            saveAccounts(context, accounts)
-        }
+        // 쿠키를 암호화 저장소에 직접 저장
+        saveCookie(context, id, cookie)
     }
 
     // ===== 알림 상태 영속화 (서비스 재시작 시 중복 알림 방지) =====
@@ -226,5 +229,74 @@ object SessionManager {
         val obj = JSONObject()
         for ((k, v) in map) obj.put(k, v)
         getPrefs(context).edit().putString(KEY_ALERTED_LOGIN, obj.toString()).apply()
+    }
+
+    // ===== 쿠키 암호화 저장 (EncryptedSharedPreferences) =====
+    // 쿠키는 세션 토큰이므로 평문 SharedPreferences 대신 Android Keystore 기반 암호화 사용.
+    // 평문 저장된 기존 쿠키는 마이그레이션 시 암호화 저장소로 이동 후 평문에서 제거.
+    private const val COOKIE_PREFS_NAME = "OllamaCookieVault"
+    private const val COOKIE_KEY_PREFIX = "cookie_"
+    private const val COOKIE_MIGRATED_KEY = "cookie_migrated"
+
+    private fun getCookiePrefs(context: Context): SharedPreferences {
+        return try {
+            val masterKey = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+            EncryptedSharedPreferences.create(
+                context,
+                COOKIE_PREFS_NAME,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            // 암호화 실패 시 평문 fallback (최악의 경우 — 루팅 기기 등)
+            e.printStackTrace()
+            context.getSharedPreferences("${COOKIE_PREFS_NAME}_fallback", Context.MODE_PRIVATE)
+        }
+    }
+
+    fun getCookie(context: Context, accountId: String): String {
+        return getCookiePrefs(context).getString(COOKIE_KEY_PREFIX + accountId, "") ?: ""
+    }
+
+    fun saveCookie(context: Context, accountId: String, cookie: String) {
+        getCookiePrefs(context).edit().putString(COOKIE_KEY_PREFIX + accountId, cookie).apply()
+    }
+
+    fun deleteCookie(context: Context, accountId: String) {
+        getCookiePrefs(context).edit().remove(COOKIE_KEY_PREFIX + accountId).apply()
+    }
+
+    /**
+     * 기존 평문 SharedPreferences에 저장된 쿠키를 암호화 저장소로 마이그레이션.
+     * 앱 시작 시 한 번 호출. 이미 마이그레이션됐으면 스킵.
+     */
+    fun migrateCookiesIfNeeded(context: Context) {
+        val prefs = getPrefs(context)
+        if (prefs.getBoolean(COOKIE_MIGRATED_KEY, false)) return
+
+        try {
+            val jsonStr = prefs.getString(KEY_ACCOUNTS, "[]") ?: "[]"
+            val array = JSONArray(jsonStr)
+            var changed = false
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val id = obj.optString("id", "")
+                val cookie = obj.optString("cookie", "")
+                if (id.isNotEmpty() && cookie.isNotEmpty()) {
+                    saveCookie(context, id, cookie)
+                    obj.put("cookie", "")  // 평문에서 제거
+                    changed = true
+                }
+            }
+            if (changed) {
+                prefs.edit().putString(KEY_ACCOUNTS, array.toString()).apply()
+            }
+            prefs.edit().putBoolean(COOKIE_MIGRATED_KEY, true).apply()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }
