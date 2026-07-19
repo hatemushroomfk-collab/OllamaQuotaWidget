@@ -1,5 +1,17 @@
-# Project exclude paths
+# Build outputs
 /.gradle/
 /app/build/
-/app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/
 /build/
+
+# Local configuration (PC-specific SDK path — 절대 커밋 금지)
+/local.properties
+
+# IDE
+/.idea/
+
+# Debug screenshots
+screen*.png
+
+# OS files
+.DS_Store
+Thumbs.db
