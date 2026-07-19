@@ -97,11 +97,16 @@ class QuotaForegroundService : Service() {
                 val wLong = QuotaParser.parsePercentToLong(qData.weeklyVal)
                 checkAlerts(acc, sLong, wLong)
 
-                if (acc.previousSessionVal >= 0 && sLong < acc.previousSessionVal) {
+                // 세션 초기화 감지 — 초기화 시각(resetTimeIso)이 바뀌었으면 리셋된 것
+                // 이전 값과 비교해서 시각이 달라지면 알림 발생
+                if (acc.lastResetTimeIso.isNotEmpty() && 
+                    qData.resetTimeIso.isNotEmpty() && 
+                    qData.resetTimeIso != acc.lastResetTimeIso) {
                     if (acc.alertOnReset) {
                         sendResetAlert(acc.id, acc.name)
                     }
                 }
+                acc.lastResetTimeIso = qData.resetTimeIso
                 acc.previousSessionVal = sLong
             }
         }
@@ -144,16 +149,25 @@ class QuotaForegroundService : Service() {
         
         // --- 1. Collapsed View ---
         val collapsedAccounts = accounts.filter { it.showCollapsed }.take(2)
-        val collapsedText = if (collapsedAccounts.isEmpty()) {
-            "설정된 계정 없음"
-        } else {
-            collapsedAccounts.joinToString(" | ") { "${it.name}: ${it.quotaSummary}" }
-        }
-        
         val collapsedViews = RemoteViews(packageName, R.layout.notification_custom_collapsed)
-        collapsedViews.setTextViewText(R.id.tvCollapsedText, collapsedText)
         collapsedViews.setTextViewText(R.id.tvUpdateTimeCollapsed, timeString)
         collapsedViews.setOnClickPendingIntent(R.id.llCollapsedRoot, refreshPendingIntent)
+
+        // 계정별 행 동적 추가 — 계정명(가변) + usage(우측 고정) 정렬
+        collapsedViews.removeAllViews(R.id.llCollapsedAccountsContainer)
+        if (collapsedAccounts.isEmpty()) {
+            val emptyView = RemoteViews(packageName, R.layout.notification_collapsed_account_item)
+            emptyView.setTextViewText(R.id.tvCollapsedAccName, "설정된 계정 없음")
+            emptyView.setTextViewText(R.id.tvCollapsedAccUsage, "")
+            collapsedViews.addView(R.id.llCollapsedAccountsContainer, emptyView)
+        } else {
+            for (acc in collapsedAccounts) {
+                val row = RemoteViews(packageName, R.layout.notification_collapsed_account_item)
+                row.setTextViewText(R.id.tvCollapsedAccName, acc.name)
+                row.setTextViewText(R.id.tvCollapsedAccUsage, acc.quotaSummary)
+                collapsedViews.addView(R.id.llCollapsedAccountsContainer, row)
+            }
+        }
 
         // --- 2. Expanded (Graph) View ---
         val expandedViews = RemoteViews(packageName, R.layout.notification_custom_graph)
@@ -187,23 +201,52 @@ class QuotaForegroundService : Service() {
             itemView.setTextViewText(R.id.tvAccWeeklyVal, wVal)
             itemView.setProgressBar(R.id.pbAccWeekly, 100, wInt, false)
 
-            // 모델별 사용량 바인딩 (토글 플래그 적용 — expanded에서만 표시)
-            val sessionModelsStr = QuotaParser.formatModels(
-                acc.sessionModelsJson, sVal,
-                acc.showModelUsage, acc.showModelRequests, acc.showModelUsagePerReq
+            // 모델별 사용량 바인딩 — 색 점 + 개별 행으로 동적 addView (expanded에서만)
+            // 252dp 제한 때문에 usage 기준 상위 2개 모델만 표시
+            itemView.removeAllViews(R.id.llSessionModelsContainer)
+            itemView.removeAllViews(R.id.llWeeklyModelsContainer)
+
+            val sessionModels = QuotaParser.takeTopModelsByUsage(
+                QuotaParser.parseModelsToList(acc.sessionModelsJson, sVal), 2
             )
-            val weeklyModelsStr = QuotaParser.formatModels(
-                acc.weeklyModelsJson, wVal,
-                acc.showModelUsage, acc.showModelRequests, acc.showModelUsagePerReq
+            val weeklyModels = QuotaParser.takeTopModelsByUsage(
+                QuotaParser.parseModelsToList(acc.weeklyModelsJson, wVal), 2
             )
-            itemView.setTextViewText(R.id.tvAccSessionModels, if (sessionModelsStr.isNotEmpty()) "S: $sessionModelsStr" else "")
-            itemView.setTextViewText(R.id.tvAccWeeklyModels, if (weeklyModelsStr.isNotEmpty()) "W: $weeklyModelsStr" else "")
+
+            for (m in sessionModels) {
+                val infoStr = QuotaParser.formatModelInfo(
+                    m, acc.showModelUsage, acc.showModelRequests, acc.showModelUsagePerReq
+                )
+                if (infoStr.isEmpty()) continue
+                val modelView = RemoteViews(packageName, R.layout.notification_model_item)
+                modelView.setTextViewText(R.id.tvColorDot, "●")
+                modelView.setTextColor(R.id.tvColorDot, QuotaParser.parseColorInt(m.color))
+                modelView.setTextViewText(R.id.tvModelInfo, "S: $infoStr")
+                itemView.addView(R.id.llSessionModelsContainer, modelView)
+            }
+
+            for (m in weeklyModels) {
+                val infoStr = QuotaParser.formatModelInfo(
+                    m, acc.showModelUsage, acc.showModelRequests, acc.showModelUsagePerReq
+                )
+                if (infoStr.isEmpty()) continue
+                val modelView = RemoteViews(packageName, R.layout.notification_model_item)
+                modelView.setTextViewText(R.id.tvColorDot, "●")
+                modelView.setTextColor(R.id.tvColorDot, QuotaParser.parseColorInt(m.color))
+                modelView.setTextViewText(R.id.tvModelInfo, "W: $infoStr")
+                itemView.addView(R.id.llWeeklyModelsContainer, modelView)
+            }
 
             expandedViews.addView(R.id.llAccountsContainer, itemView)
         }
 
         builder.setContentTitle("Ollama Quota")
-        builder.setContentText(collapsedText)
+        // setContentText는 알림 기본 본문 — 줄바꿈 없이 첫 계정만 표시
+        val contentTextDefault = if (collapsedAccounts.isNotEmpty()) {
+            "${collapsedAccounts[0].name}: ${collapsedAccounts[0].quotaSummary}" +
+            if (collapsedAccounts.size > 1) " 외 ${collapsedAccounts.size - 1}개" else ""
+        } else "설정된 계정 없음"
+        builder.setContentText(contentTextDefault)
         builder.setCustomContentView(collapsedViews)
         builder.setCustomBigContentView(expandedViews)
 
