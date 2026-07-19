@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 모델 1개 행: 색 점 + 모델 정보 텍스트. 홈화면 위젯에서 사용. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:layout_marginStart="8dp"
+    android:layout_marginTop="1dp">
+
+    <!-- 색 점 (ollama.com 버튼 색상) -->
+    <TextView
+        android:id="@+id/tvColorDot"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:layout_marginEnd="6dp"
+        android:text="●"
+        android:textSize="9sp"
+        android:textColor="#DDDDDD" />
+
+    <!-- 모델 정보: "glm-5.2: 7req (1.0%, 0.143%/req)" -->
+    <TextView
+        android:id="@+id/tvModelInfo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="9sp"
+        android:textColor="#999999"
+        android:singleLine="true"
+        android:ellipsize="end" />
+</LinearLayout>

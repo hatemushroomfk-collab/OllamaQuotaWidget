@@ -32,7 +32,8 @@ data class Account(
     // 모델별 표시 토글 (expanded 알림창 / 위젯 / 앱에서 적용)
     var showModelUsage: Boolean = true,           // 모델별 usage %
     var showModelRequests: Boolean = true,         // 모델별 requests 수
-    var showModelUsagePerReq: Boolean = true       // 모델별 usage/requests 비율
+    var showModelUsagePerReq: Boolean = true,      // 모델별 usage/requests 비율
+    var lastResetTimeIso: String = ""              // 마지막으로 관측한 세션 초기화 시각 (리셋 감지용)
 )
 
 object SessionManager {
@@ -100,8 +101,8 @@ object SessionManager {
 
                 list.add(
                     Account(
-                        id = obj.getString("id"),
-                        name = obj.getString("name"),
+                        id = obj.optString("id", java.util.UUID.randomUUID().toString()),
+                        name = obj.optString("name", "계정"),
                         cookie = obj.optString("cookie", ""),
                         quotaSummary = obj.optString("quotaSummary", "데이터 없음"),
                         quotaDetails = obj.optString("quotaDetails", "[]"),
@@ -113,14 +114,12 @@ object SessionManager {
                         previousSessionVal = run {
                             // 마이그레이션: 기존 Int 값(예: 1 = 1%)을 ×10 보정 (→ 10L = 1.0%)
                             // 새 형식은 소수 1자리 보존 (예: 1.7% → 17L)
-                            val raw = obj.opt("previousSessionVal")
-                            when (raw) {
-                                is Number -> {
-                                    val v = raw.toLong()
-                                    // 기존 값이 ×10 안 된 구버전 감지: 0~100 범위면 ×10 보정
-                                    if (v in 0..100) v * 10 else v
-                                }
-                                else -> -10L  // -1.0% (미설정)
+                            try {
+                                val v = obj.optLong("previousSessionVal", -10L)
+                                // 기존 값이 ×10 안 된 구버전 감지: 0~100 범위면 ×10 보정
+                                if (v in 0..100) v * 10 else v
+                            } catch (e: Exception) {
+                                -10L  // -1.0% (미설정)
                             }
                         },
                         resetTimeDisplayMode = obj.optInt("resetTimeDisplayMode", 0),
@@ -130,7 +129,8 @@ object SessionManager {
                         resetTimeIso = obj.optString("resetTimeIso", ""),
                         showModelUsage = obj.optBoolean("showModelUsage", true),
                         showModelRequests = obj.optBoolean("showModelRequests", true),
-                        showModelUsagePerReq = obj.optBoolean("showModelUsagePerReq", true)
+                        showModelUsagePerReq = obj.optBoolean("showModelUsagePerReq", true),
+                        lastResetTimeIso = obj.optString("lastResetTimeIso", "")
                     )
                 )
             }
@@ -163,6 +163,7 @@ object SessionManager {
             obj.put("showModelUsage", acc.showModelUsage)
             obj.put("showModelRequests", acc.showModelRequests)
             obj.put("showModelUsagePerReq", acc.showModelUsagePerReq)
+            obj.put("lastResetTimeIso", acc.lastResetTimeIso)
             array.put(obj)
         }
         getPrefs(context).edit().putString(KEY_ACCOUNTS, array.toString()).apply()

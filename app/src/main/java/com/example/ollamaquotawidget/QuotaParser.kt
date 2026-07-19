@@ -27,6 +27,18 @@ data class ScrapeResult(
 )
 
 /**
+ * 모델 1개의 파싱된 정보. UI에서 색 점 + 모델 행으로 표시할 때 사용.
+ */
+data class ModelInfo(
+    val model: String,
+    val requests: Int,
+    val share: Double,      // 버튼 width % (예: 40.4)
+    val color: String,       // "#22c55e"
+    val usagePercent: Double,   // 모델 실제 사용량 % (예: 7.3)
+    val usagePerReq: Double?    // 1 request당 usage % (예: 0.053), requests가 0이면 null
+)
+
+/**
  * ollama.com/settings HTML 파싱 공통 로직.
  *
  * 페이지 구조 (2025-07 기준):
@@ -222,71 +234,86 @@ object QuotaParser {
     }
 
     /**
-     * 모델 JSON 배열을 표시용 문자열로 변환.
+     * 모델 JSON 배열을 List<ModelInfo>로 파싱.
+     * 각 모델의 usage% / usagePerReq를 미리 계산해서 반환.
+     * UI에서 색 점 + 개별 행으로 표시할 때 사용.
      *
-     * 토글 플래그로 표시 항목 제어:
-     *   - showUsage:      모델별 usage % (예: "1.0%")
-     *   - showRequests:   모델별 requests 수 (예: "7req")
-     *   - showUsagePerReq: 1 request당 usage % (예: "0.14%/req")
-     *
-     * 세 토글 모두 false → 빈 문자열 (모델 자체 미표시).
-     *
-     * 모델별 usage % = 전체 사용량% × share/100 (share는 버튼 width%).
-     * usagePerReq = 모델 usage% / requests (requests가 0이면 표시 안 함).
-     *
-     * 예 (모두 true):
-     *   "glm-5.2: 7req (1.0%, 0.14%/req)"
-     * 예 (usage + requests만):
-     *   "glm-5.2: 7req (1.0%)"
+     * @param modelsJson  [{model, requests, share, color}]
+     * @param totalPercent 전체 사용량 % (예: "18%")
      */
-    fun formatModels(
-        modelsJson: String,
-        totalPercent: String,
-        showUsage: Boolean = true,
-        showRequests: Boolean = true,
-        showUsagePerReq: Boolean = false
-    ): String {
-        return try {
+    fun parseModelsToList(modelsJson: String, totalPercent: String): List<ModelInfo> {
+        val result = mutableListOf<ModelInfo>()
+        try {
             val arr = JSONArray(modelsJson)
-            if (arr.length() == 0) return ""
-            // 세 토글 모두 꺼져 있으면 모델 자체를 표시하지 않음
-            if (!showUsage && !showRequests && !showUsagePerReq) return ""
+            if (arr.length() == 0) return result
 
-            val totalVal = parsePercentToLong(totalPercent) // "1.7%" -> 17L (소수 1자리 보존)
-            val sb = StringBuilder()
+            val totalVal = parsePercentToLong(totalPercent)
             for (i in 0 until arr.length()) {
                 val obj = arr.getJSONObject(i)
                 val model = obj.optString("model", "")
                 val requests = obj.optInt("requests", 0)
                 val share = obj.optDouble("share", 0.0)
+                val color = obj.optString("color", "")
 
-                // 모델별 usage%: totalVal(소수1자리*10) * share / 100 → 소수 1자리로 복원
-                // 예: totalVal=170(=17.0%), share=40.4 → 170*40.4/100 = 68.68 → /10 = 6.868% → 표시 6.9%
-                val modelUsageScaled = (totalVal * share / 100.0) / 10.0 // 실제 %
-                val modelUsageStr = if (modelUsageScaled >= 0.1) String.format("%.1f%%", modelUsageScaled) else "0%"
+                val usagePercent = (totalVal * share / 100.0) / 10.0
+                val usagePerReq = if (requests > 0 && usagePercent > 0) usagePercent / requests else null
 
-                // usage per request: modelUsageScaled / requests
-                val usagePerReqStr = if (requests > 0 && modelUsageScaled > 0) {
-                    val perReq = modelUsageScaled / requests
-                    String.format("%.3f%%/req", perReq)
-                } else {
-                    null
-                }
-
-                // 괄호 안 항목 조립
-                val parenItems = mutableListOf<String>()
-                if (showUsage) parenItems.add(modelUsageStr)
-                if (showUsagePerReq && usagePerReqStr != null) parenItems.add(usagePerReqStr)
-
-                val modelPart = if (showRequests) "$model: ${requests}req" else model
-                val fullPart = if (parenItems.isNotEmpty()) "$modelPart (${parenItems.joinToString(", ")})" else modelPart
-
-                if (sb.isNotEmpty()) sb.append(", ")
-                sb.append(fullPart)
+                result.add(ModelInfo(model, requests, share, color, usagePercent, usagePerReq))
             }
-            sb.toString()
         } catch (e: Exception) {
-            ""
+            e.printStackTrace()
+        }
+        return result
+    }
+
+    /**
+     * 단일 ModelInfo를 표시용 문자열로 포맷팅.
+     * 토글 플래그로 표시 항목 제어.
+     *
+     * 예 (모두 true): "glm-5.2: 7req (1.0%, 0.143%/req)"
+     * 예 (usage+requests): "glm-5.2 (7req, 1.0%)"
+     * 예 (모두 ON): "glm-5.2 (7req, 1.0%, 0.143%/req)"
+     */
+    fun formatModelInfo(
+        info: ModelInfo,
+        showUsage: Boolean,
+        showRequests: Boolean,
+        showUsagePerReq: Boolean
+    ): String {
+        // 세 토글 모두 false → 빈 문자열
+        if (!showUsage && !showRequests && !showUsagePerReq) return ""
+
+        val usageStr = if (info.usagePercent >= 0.1) String.format("%.1f%%", info.usagePercent) else "0%"
+        val perReqStr = if (info.usagePerReq != null) String.format("%.3f%%/req", info.usagePerReq) else null
+        val reqStr = "${info.requests}req"
+
+        // 모든 항목을 괄호 안으로 — requests, usage, usagePerReq 순서
+        val parenItems = mutableListOf<String>()
+        if (showRequests) parenItems.add(reqStr)
+        if (showUsage) parenItems.add(usageStr)
+        if (showUsagePerReq && perReqStr != null) parenItems.add(perReqStr)
+
+        return if (parenItems.isNotEmpty()) "${info.model} (${parenItems.joinToString(", ")})" else info.model
+    }
+
+    /**
+     * 모델 리스트를 usage% 내림차순 정렬 후 상위 maxCount개만 반환.
+     * 알림창 expanded처럼 공간 제한이 있는 곳에서 사용.
+     */
+    fun takeTopModelsByUsage(models: List<ModelInfo>, maxCount: Int): List<ModelInfo> {
+        return models.sortedByDescending { it.usagePercent }.take(maxCount)
+    }
+
+    /**
+     * 색 문자열("#22c55e")을 안드로이드 int 색상으로 변환.
+     * 파싱 실패 시 기본 회색(0x888888) 반환.
+     */
+    fun parseColorInt(colorHex: String): Int {
+        return try {
+            if (colorHex.isNotEmpty()) android.graphics.Color.parseColor(colorHex)
+            else 0x888888.toInt()
+        } catch (e: Exception) {
+            0x888888.toInt()
         }
     }
 

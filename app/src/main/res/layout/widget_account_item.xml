@@ -73,26 +73,18 @@
             android:textColor="#BBBBBB"/>
     </LinearLayout>
 
-    <!-- 모델별 사용량 요약 (세션/주간) -->
-    <TextView
-        android:id="@+id/tvAccSessionModels"
+    <!-- 모델별 행 컨테이너 (여기에 widget_model_item.xml 동적 addView) -->
+    <LinearLayout
+        android:id="@+id/llSessionModelsContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="9sp"
-        android:textColor="#999999"
-        android:singleLine="true"
-        android:ellipsize="end"
-        android:layout_marginTop="2dp"
-        android:layout_marginStart="50dp" />
+        android:orientation="vertical"
+        android:layout_marginTop="2dp" />
 
-    <TextView
-        android:id="@+id/tvAccWeeklyModels"
+    <LinearLayout
+        android:id="@+id/llWeeklyModelsContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="9sp"
-        android:textColor="#999999"
-        android:singleLine="true"
-        android:ellipsize="end"
-        android:layout_marginStart="50dp" />
+        android:orientation="vertical" />
 
 </LinearLayout>
