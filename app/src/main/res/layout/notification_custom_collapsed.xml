@@ -36,15 +36,12 @@
                 android:textAppearance="@style/TextAppearance.Compat.Notification.Info" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/tvCollapsedText"
-            android:layout_width="wrap_content"
+        <!-- 계정별 행 컨테이너 (여기에 notification_collapsed_account_item.xml 동적 addView) -->
+        <LinearLayout
+            android:id="@+id/llCollapsedAccountsContainer"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="-2dp"
-            android:text="계정1: ... | 계정2: ..."
-            android:textSize="12sp"
-            android:textAppearance="@style/TextAppearance.Compat.Notification.Line2"
-            android:maxLines="2"
-            android:ellipsize="end" />
+            android:orientation="vertical"
+            android:layout_marginTop="-2dp" />
     </LinearLayout>
 </LinearLayout>

@@ -67,17 +67,41 @@ class QuotaWidgetProvider : AppWidgetProvider() {
                 itemView.setTextViewText(R.id.tvAccWeeklyVal, wVal)
                 itemView.setProgressBar(R.id.pbAccWeekly, 100, wInt, false)
 
-                // 모델별 사용량 바인딩 (토글 플래그 적용)
-                val sessionModelsStr = QuotaParser.formatModels(
-                    acc.sessionModelsJson, sVal,
-                    acc.showModelUsage, acc.showModelRequests, acc.showModelUsagePerReq
+                // 모델별 사용량 바인딩 — 색 점 + 개별 행으로 동적 addView
+                // 위젯 공간 제한 때문에 usage 기준 상위 2개 모델만 표시
+                itemView.removeAllViews(R.id.llSessionModelsContainer)
+                itemView.removeAllViews(R.id.llWeeklyModelsContainer)
+
+                val sessionModels = QuotaParser.takeTopModelsByUsage(
+                    QuotaParser.parseModelsToList(acc.sessionModelsJson, sVal), 2
                 )
-                val weeklyModelsStr = QuotaParser.formatModels(
-                    acc.weeklyModelsJson, wVal,
-                    acc.showModelUsage, acc.showModelRequests, acc.showModelUsagePerReq
+                val weeklyModels = QuotaParser.takeTopModelsByUsage(
+                    QuotaParser.parseModelsToList(acc.weeklyModelsJson, wVal), 2
                 )
-                itemView.setTextViewText(R.id.tvAccSessionModels, if (sessionModelsStr.isNotEmpty()) "S: $sessionModelsStr" else "")
-                itemView.setTextViewText(R.id.tvAccWeeklyModels, if (weeklyModelsStr.isNotEmpty()) "W: $weeklyModelsStr" else "")
+
+                for (m in sessionModels) {
+                    val infoStr = QuotaParser.formatModelInfo(
+                        m, acc.showModelUsage, acc.showModelRequests, acc.showModelUsagePerReq
+                    )
+                    if (infoStr.isEmpty()) continue
+                    val modelView = RemoteViews(context.packageName, R.layout.widget_model_item)
+                    modelView.setTextViewText(R.id.tvColorDot, "●")
+                    modelView.setTextColor(R.id.tvColorDot, QuotaParser.parseColorInt(m.color))
+                    modelView.setTextViewText(R.id.tvModelInfo, "S: $infoStr")
+                    itemView.addView(R.id.llSessionModelsContainer, modelView)
+                }
+
+                for (m in weeklyModels) {
+                    val infoStr = QuotaParser.formatModelInfo(
+                        m, acc.showModelUsage, acc.showModelRequests, acc.showModelUsagePerReq
+                    )
+                    if (infoStr.isEmpty()) continue
+                    val modelView = RemoteViews(context.packageName, R.layout.widget_model_item)
+                    modelView.setTextViewText(R.id.tvColorDot, "●")
+                    modelView.setTextColor(R.id.tvColorDot, QuotaParser.parseColorInt(m.color))
+                    modelView.setTextViewText(R.id.tvModelInfo, "W: $infoStr")
+                    itemView.addView(R.id.llWeeklyModelsContainer, modelView)
+                }
 
                 views.addView(R.id.llAccountsContainer, itemView)
             }

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 한줄 알림창의 계정 1개 행: 계정명(가변) + usage(우측 고정) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+
+    <!-- 계정명 (가변 폭, 길면 말줄임) -->
+    <TextView
+        android:id="@+id/tvCollapsedAccName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="계정"
+        android:textSize="12sp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textAppearance="@style/TextAppearance.Compat.Notification.Line2" />
+
+    <!-- usage 요약 (우측 고정 정렬) -->
+    <TextView
+        android:id="@+id/tvCollapsedAccUsage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="S: 0% | W: 0%"
+        android:textSize="12sp"
+        android:layout_marginStart="8dp"
+        android:textAppearance="@style/TextAppearance.Compat.Notification.Line2" />
+</LinearLayout>

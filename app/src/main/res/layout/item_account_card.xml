@@ -14,7 +14,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:layout_marginBottom="8dp">
-        
+
         <EditText
             android:id="@+id/etItemName"
             android:layout_width="0dp"
@@ -24,17 +24,7 @@
             android:textSize="18sp"
             android:textStyle="bold"
             android:background="@null" />
-            
-        <Button
-            android:id="@+id/btnItemSaveName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="이름 저장"
-            android:textSize="12sp"
-            android:minHeight="0dp"
-            android:minWidth="0dp"
-            android:padding="8dp"/>
-            
+
         <ImageButton
             android:id="@+id/btnItemDelete"
             android:layout_width="wrap_content"
@@ -112,20 +102,19 @@
         android:textSize="11sp"
         android:layout_marginBottom="4dp" />
 
-    <TextView
-        android:id="@+id/tvItemSessionModels"
+    <!-- 모델별 행 컨테이너 (앱에서 동적 TextView addView) -->
+    <LinearLayout
+        android:id="@+id/llSessionModelsContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="11sp"
-        android:text="세션: -"
+        android:orientation="vertical"
         android:layout_marginBottom="2dp" />
 
-    <TextView
-        android:id="@+id/tvItemWeeklyModels"
+    <LinearLayout
+        android:id="@+id/llWeeklyModelsContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="11sp"
-        android:text="주간: -"
+        android:orientation="vertical"
         android:layout_marginBottom="12dp" />
 
     <View
@@ -209,12 +198,5 @@
         android:minHeight="0dp"
         android:padding="8dp"
         android:layout_marginBottom="8dp"/>
-    
-    <Button
-        android:id="@+id/btnItemSaveSettings"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="설정 저장 (표시 여부 및 경고 기준)"
-        android:layout_marginTop="8dp"/>
 
 </LinearLayout>
