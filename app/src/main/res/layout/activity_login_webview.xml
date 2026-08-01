@@ -7,11 +7,11 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="로그인을 완료하면 이 창을 닫아주세요."
+        android:text="로그인을 완료하면 자동으로 창이 닫힙니다."
         android:textSize="14sp"
         android:textStyle="bold"
         android:gravity="center"
-        android:padding="16dp" />
+        android:padding="12dp" />
 
     <WebView
         android:id="@+id/webView"
