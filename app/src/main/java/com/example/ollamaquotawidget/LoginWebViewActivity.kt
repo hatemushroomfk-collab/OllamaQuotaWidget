@@ -1,8 +1,11 @@
 package com.example.ollamaquotawidget
 
 import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.webkit.CookieManager
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
@@ -33,6 +36,8 @@ class LoginWebViewActivity : AppCompatActivity() {
 
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
+        webView.settings.setAllowFileAccess(false)
+        webView.settings.setAllowContentAccess(false)
 
         // Google 로그인 403 disallowed_useragent 우회
         val userAgent = webView.settings.userAgentString
@@ -40,6 +45,16 @@ class LoginWebViewActivity : AppCompatActivity() {
 
         // 구버전 방식: shouldOverrideUrlLoading 없음 — 모든 URL이 WebView 안에서 열림
         webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val url = request?.url?.toString() ?: return false
+                return handleUrl(url)
+            }
+
+            @Suppress("DEPRECATION")
+            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                return handleUrl(url ?: return false)
+            }
+
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 checkCookies()
@@ -66,13 +81,30 @@ class LoginWebViewActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        webView.apply {
-            stopLoading()
-            webChromeClient = null
-            webViewClient = WebViewClient()
-            removeJavascriptInterface("Android")
-            destroy()
+        if (::webView.isInitialized) {
+            webView.apply {
+                stopLoading()
+                webChromeClient = null
+                webViewClient = WebViewClient()
+                removeJavascriptInterface("Android")
+                destroy()
+            }
         }
         super.onDestroy()
+    }
+
+    /**
+     * Returns true when the URL is handled here (opened externally),
+     * false when the WebView should load it. Only ollama.com loads in WebView.
+     */
+    private fun handleUrl(url: String): Boolean {
+        val host = Uri.parse(url).host
+        if (host == "ollama.com") return false
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return true
     }
 }

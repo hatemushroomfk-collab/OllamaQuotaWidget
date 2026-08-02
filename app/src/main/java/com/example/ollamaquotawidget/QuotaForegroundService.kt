@@ -13,6 +13,8 @@ import android.content.pm.ServiceInfo
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
 import org.jsoup.Jsoup
 import java.text.SimpleDateFormat
@@ -26,6 +28,8 @@ class QuotaForegroundService : Service() {
     private val NOTIFICATION_ID = 1
     private val scope = CoroutineScope(Dispatchers.IO + Job())
     private var updateJob: Job? = null
+    // Serializes updateQuota() so periodic updates and FORCE_REFRESH cannot run simultaneously.
+    private val updateMutex = Mutex()
 
     // 1회성 알림 방지 상태 맵 — 스레드 안전 + SharedPreferences에 영속화
     private val hasAlertedRule = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
@@ -33,6 +37,14 @@ class QuotaForegroundService : Service() {
 
     companion object {
         const val ACTION_FORCE_REFRESH = "ACTION_FORCE_REFRESH"
+        // Notification ID segments are 64K-aligned (stride 0x10000 = 65536) so the
+        // 16-bit hash (hashCode and 0xFFFF) can never collide across categories:
+        // quota alerts 1000..66535, reset alerts 66536..132071, login alerts 132072..198607.
+        private const val NOTIFICATION_BASE = 1000
+        private const val NOTIFICATION_CATEGORY_STRIDE = 0x10000
+        private const val QUOTA_ALERT_CATEGORY = 0
+        private const val RESET_ALERT_CATEGORY = 1
+        private const val LOGIN_ALERT_CATEGORY = 2
     }
 
     override fun onCreate() {
@@ -45,6 +57,16 @@ class QuotaForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_FORCE_REFRESH) {
+            // Call startForeground() before doing any work, even when the service was
+            // just started by a FORCE_REFRESH intent, to avoid
+            // ForegroundServiceDidNotStartInTimeException.
+            val currentAccounts = SessionManager.getAccounts(this)
+            val refreshNotif = buildNotification(currentAccounts)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(NOTIFICATION_ID, refreshNotif, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+            } else {
+                startForeground(NOTIFICATION_ID, refreshNotif)
+            }
             scope.launch {
                 updateQuota()
             }
@@ -73,13 +95,15 @@ class QuotaForegroundService : Service() {
         }
     }
 
-    private suspend fun updateQuota() {
+    private suspend fun updateQuota() = updateMutex.withLock {
         val accounts = SessionManager.getAccounts(this).toMutableList()
         var updated = false
 
         for (acc in accounts) {
             if (acc.cookie.isNotEmpty()) {
                 val qData = fetchQuota(acc.cookie, acc.id, acc.name)
+                // On network errors keep the previous data and skip the save.
+                if (isNetworkErrorResult(qData)) continue
                 acc.quotaSummary = qData.summary
                 acc.quotaDetails = qData.detailsJson
                 acc.sessionResetTime = qData.resetTime
@@ -122,6 +146,9 @@ class QuotaForegroundService : Service() {
             QuotaWidgetProvider.updateAllWidgets(this@QuotaForegroundService)
         }
     }
+
+    private fun isNetworkErrorResult(result: ScrapeResult): Boolean =
+        result.summary == QuotaParser.networkErrorResult().summary
     
     private fun buildNotification(accounts: List<Account>): Notification {
         val pendingIntent = PendingIntent.getActivity(
@@ -136,10 +163,10 @@ class QuotaForegroundService : Service() {
         )
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setOnlyAlertOnce(true)
             .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
 
         val timeString = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
         
@@ -348,7 +375,7 @@ class QuotaForegroundService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val builder = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("할당량 경고: $accountName")
             .setContentText("${type} 할당량을 $valueStr 사용했습니다! (경고 기준: $threshold%)")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -356,9 +383,9 @@ class QuotaForegroundService : Service() {
             .setContentIntent(pendingIntent)
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        // 알림 ID: 1000 대역 (quota alert). ruleId 해시로 각 규칙마다 고유 ID.
-        // 0xFFFF 마스킹 (65536 슬롯) — 계정/규칙 많아도 충돌 확률 극히 낮음
-        val notifId = 1000 + (ruleId.hashCode() and 0xFFFF) // 1000~65535
+        // Quota alerts: 1000..66535 (16-bit hash, category 0)
+        val notifId = NOTIFICATION_BASE + QUOTA_ALERT_CATEGORY * NOTIFICATION_CATEGORY_STRIDE +
+            (ruleId.hashCode() and 0xFFFF)
         manager.notify(notifId, builder.build())
     }
 
@@ -370,7 +397,7 @@ class QuotaForegroundService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val builder = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("로그인 만료: $accName")
             .setContentText("권한이 만료되었습니다. 탭하여 다시 로그인하세요.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -378,8 +405,9 @@ class QuotaForegroundService : Service() {
             .setContentIntent(pendingIntent)
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        // 알림 ID: 3000 대역 (login alert). accId 해시로 각 계정마다 고유 ID.
-        val notifId = 3000 + (accId.hashCode() and 0xFFFF) // 3000~65535
+        // Login alerts: 132072..198607 (16-bit hash, category 2)
+        val notifId = NOTIFICATION_BASE + LOGIN_ALERT_CATEGORY * NOTIFICATION_CATEGORY_STRIDE +
+            (accId.hashCode() and 0xFFFF)
         manager.notify(notifId, builder.build())
 
         hasAlertedLogin[accId] = true
@@ -392,7 +420,7 @@ class QuotaForegroundService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val builder = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("세션 할당량 초기화: $accountName")
             .setContentText("해당 계정의 세션 사용량이 초기화되었습니다!")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -400,8 +428,9 @@ class QuotaForegroundService : Service() {
             .setContentIntent(pendingIntent)
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        // 알림 ID: 2000 대역 (reset alert). accId 해시로 각 계정마다 고유 ID.
-        val notifId = 2000 + (accId.hashCode() and 0xFFFF) // 2000~65535
+        // Reset alerts: 66536..132071 (16-bit hash, category 1)
+        val notifId = NOTIFICATION_BASE + RESET_ALERT_CATEGORY * NOTIFICATION_CATEGORY_STRIDE +
+            (accId.hashCode() and 0xFFFF)
         manager.notify(notifId, builder.build())
     }
 }

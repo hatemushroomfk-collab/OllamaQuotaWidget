@@ -238,7 +238,13 @@ object SessionManager {
     private const val COOKIE_KEY_PREFIX = "cookie_"
     private const val COOKIE_MIGRATED_KEY = "cookie_migrated"
 
-    private fun getCookiePrefs(context: Context): SharedPreferences {
+    // Cache the EncryptedSharedPreferences instance so the MasterKey and
+    // EncryptedSharedPreferences are not recreated on every cookie access.
+    @Volatile
+    private var cachedCookiePrefs: SharedPreferences? = null
+
+    private fun getCookiePrefs(context: Context): SharedPreferences? {
+        cachedCookiePrefs?.let { return it }
         return try {
             val masterKey = MasterKey.Builder(context)
                 .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -249,24 +255,24 @@ object SessionManager {
                 masterKey,
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-            )
+            ).also { cachedCookiePrefs = it }
         } catch (e: Exception) {
-            // 암호화 실패 시 평문 fallback (최악의 경우 — 루팅 기기 등)
+            // Never fall back to plaintext storage: log the error and treat as not logged in.
             e.printStackTrace()
-            context.getSharedPreferences("${COOKIE_PREFS_NAME}_fallback", Context.MODE_PRIVATE)
+            null
         }
     }
 
     fun getCookie(context: Context, accountId: String): String {
-        return getCookiePrefs(context).getString(COOKIE_KEY_PREFIX + accountId, "") ?: ""
+        return getCookiePrefs(context)?.getString(COOKIE_KEY_PREFIX + accountId, "") ?: ""
     }
 
     fun saveCookie(context: Context, accountId: String, cookie: String) {
-        getCookiePrefs(context).edit().putString(COOKIE_KEY_PREFIX + accountId, cookie).apply()
+        getCookiePrefs(context)?.edit()?.putString(COOKIE_KEY_PREFIX + accountId, cookie)?.apply()
     }
 
     fun deleteCookie(context: Context, accountId: String) {
-        getCookiePrefs(context).edit().remove(COOKIE_KEY_PREFIX + accountId).apply()
+        getCookiePrefs(context)?.edit()?.remove(COOKIE_KEY_PREFIX + accountId)?.apply()
     }
 
     /**

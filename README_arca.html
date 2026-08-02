@@ -1,0 +1,366 @@
+<div style="max-width:760px;margin:0 auto;font-family:-apple-system,'Segoe UI',Roboto,'Noto Sans KR',sans-serif;color:#333;line-height:1.6">
+
+<h1 style="font-size:28px;color:#1a1a1a;margin-bottom:12px">🦙 Ollama Quota Widget</h1>
+<p style="font-size:16px;color:#666;margin-bottom:16px">Ollama Cloud 사용량을 안드로이드 폰에서 실시간으로 모니터링</p>
+
+<div style="background:#018786;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;margin-bottom:24px;text-align:center">
+✍️ 이 소개글은 Hermes Agent + GLM 5.2로 작성되었습니다.
+</div>
+
+<p style="font-size:15px;color:#444;margin-bottom:24px;line-height:1.8">
+ollama.com이 공식 API 대신 웹 대시보드만 제공해서, 할당량을 확인하려면 매번 사이트에 들어가야 했죠. 이 앱은 그걸 폰에서 한눈에 보게 해줍니다 — 홈화면 위젯, 상단 고정 알림, 모델별 사용량 분석까지.
+</p>
+
+<h2 style="font-size:20px;color:#1a1a1a;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid #018786">📱 화면 미리보기</h2>
+
+<p style="font-size:13px;color:#888;margin-bottom:16px;text-align:center">
+※ 아래 이미지는 실제 화면이 아닌 UI 구조를 나타낸 <strong>예시 이미지</strong>입니다. 실제 폰에서는 화면 크기에 따라 레이아웃이 다를 수 있습니다.
+</p>
+
+<!-- ① 한줄 알림 -->
+<p style="font-size:15px;font-weight:700;color:#333;margin:20px 0 8px">① 상단 알림 — 접힌 상태</p>
+<div style="background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:8px 16px;margin-bottom:16px">
+<div style="display:table;width:100%;margin-bottom:2px">
+<div style="display:table-cell;font-size:13px;font-weight:700;color:#000">Ollama Quota</div>
+<div style="display:table-cell;text-align:right;font-size:12px;color:#666">14:30</div>
+</div>
+<div style="display:table;width:100%">
+<div style="display:table-cell;font-size:12px;color:#333">test1</div>
+<div style="display:table-cell;text-align:right;font-size:12px;color:#333">S: 76.4% | W: 74.8%</div>
+</div>
+<div style="display:table;width:100%">
+<div style="display:table-cell;font-size:12px;color:#333">test2</div>
+<div style="display:table-cell;text-align:right;font-size:12px;color:#333">S: 0% | W: 33%</div>
+</div>
+</div>
+
+<!-- ② 확장 알림 -->
+<p style="font-size:15px;font-weight:700;color:#333;margin:20px 0 8px">② 상단 알림 — 펼친 상태</p>
+<div style="background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:16px;margin-bottom:16px">
+<div style="display:table;width:100%;margin-bottom:12px">
+<div style="display:table-cell;font-size:15px;font-weight:700;color:#000">Ollama Quota</div>
+<div style="display:table-cell;text-align:right;font-size:12px;color:#666">14:30 &nbsp; <span style="color:#018786">앱 열기</span></div>
+</div>
+
+<p style="font-size:12px;font-weight:700;color:#000;margin-bottom:6px">test1 (↻ 16:00)</p>
+<div style="display:table;width:100%;margin-bottom:2px">
+<div style="display:table-cell;width:25px;font-size:10px;color:#666">S</div>
+<div style="display:table-cell"><div style="background:#e0e0e0;border-radius:4px;height:8px"><div style="background:#888;border-radius:4px;height:8px;width:76%"></div></div></div>
+<div style="display:table-cell;width:40px;text-align:right;font-size:10px;color:#666">76.4%</div>
+</div>
+<div style="display:table;width:100%;margin-bottom:4px">
+<div style="display:table-cell;width:25px;font-size:10px;color:#666">W</div>
+<div style="display:table-cell"><div style="background:#e0e0e0;border-radius:4px;height:8px"><div style="background:#888;border-radius:4px;height:8px;width:74%"></div></div></div>
+<div style="display:table-cell;width:40px;text-align:right;font-size:10px;color:#666">74.8%</div>
+</div>
+<p style="font-size:9px;color:#666;margin:4px 0 1px;padding-left:8px"><span style="color:#3b82f6">●</span> S: glm-5.2 (213req, 75.8%, 0.356%/req)</p>
+<p style="font-size:9px;color:#666;margin:1px 0;padding-left:8px"><span style="color:#4f46e5">●</span> S: deepseek-v4-pro (2req, 0.6%, 0.300%/req)</p>
+<p style="font-size:9px;color:#666;margin:1px 0;padding-left:8px"><span style="color:#22c55e">●</span> W: gemini-3-flash-preview (137req, 30.2%, 0.221%/req)</p>
+<p style="font-size:9px;color:#666;margin:1px 0 8px;padding-left:8px"><span style="color:#3b82f6">●</span> W: glm-5.2 (75req, 17.1%, 0.228%/req)</p>
+
+<p style="font-size:12px;font-weight:700;color:#000;margin-bottom:6px">test2 (↻ 17:00)</p>
+<div style="display:table;width:100%;margin-bottom:2px">
+<div style="display:table-cell;width:25px;font-size:10px;color:#666">S</div>
+<div style="display:table-cell"><div style="background:#e0e0e0;border-radius:4px;height:8px"></div></div>
+<div style="display:table-cell;width:40px;text-align:right;font-size:10px;color:#666">0%</div>
+</div>
+<div style="display:table;width:100%;margin-bottom:4px">
+<div style="display:table-cell;width:25px;font-size:10px;color:#666">W</div>
+<div style="display:table-cell"><div style="background:#e0e0e0;border-radius:4px;height:8px"><div style="background:#888;border-radius:4px;height:8px;width:33%"></div></div></div>
+<div style="display:table-cell;width:40px;text-align:right;font-size:10px;color:#666">33%</div>
+</div>
+<p style="font-size:9px;color:#666;margin:4px 0 1px;padding-left:8px"><span style="color:#3b82f6">●</span> W: glm-5.2 (45req, 18.0%, 0.400%/req)</p>
+<p style="font-size:9px;color:#666;margin:1px 0;padding-left:8px"><span style="color:#22c55e">●</span> W: gemini-3-flash-preview (20req, 15.0%, 0.750%/req)</p>
+</div>
+
+<!-- ③ 위젯 -->
+<p style="font-size:15px;font-weight:700;color:#333;margin:20px 0 8px">③ 홈화면 위젯</p>
+<div style="background:#1E1E1E;border-radius:12px;padding:12px;width:300px;margin-bottom:16px">
+<div style="display:table;width:100%;margin-bottom:4px">
+<div style="display:table-cell;font-size:14px;font-weight:700;color:#fff">Ollama Quota</div>
+<div style="display:table-cell;text-align:right;font-size:10px;color:#AAA">Updated: 14:30 <span style="color:#fff">↻</span></div>
+</div>
+<p style="font-size:12px;color:#DDD;margin:4px 0 2px">test1 (↻ 16:00)</p>
+<div style="display:table;width:100%;margin-bottom:2px">
+<div style="display:table-cell;width:20px;font-size:10px;color:#BBB">S</div>
+<div style="display:table-cell"><div style="background:#444;border-radius:4px;height:8px"><div style="background:#888;border-radius:4px;height:8px;width:76%"></div></div></div>
+<div style="display:table-cell;width:35px;text-align:right;font-size:10px;color:#BBB">76.4%</div>
+</div>
+<div style="display:table;width:100%;margin-bottom:4px">
+<div style="display:table-cell;width:20px;font-size:10px;color:#BBB">W</div>
+<div style="display:table-cell"><div style="background:#444;border-radius:4px;height:8px"><div style="background:#888;border-radius:4px;height:8px;width:74%"></div></div></div>
+<div style="display:table-cell;width:35px;text-align:right;font-size:10px;color:#BBB">74.8%</div>
+</div>
+<p style="font-size:9px;color:#999;margin:2px 0;padding-left:8px"><span style="color:#3b82f6">●</span> S: glm-5.2 (213req, 75.8%, 0.356%/req)</p>
+<p style="font-size:9px;color:#999;margin:1px 0;padding-left:8px"><span style="color:#22c55e">●</span> W: gemini-3-flash-preview (137req, 30.2%, 0.221%/req)</p>
+<p style="font-size:12px;color:#DDD;margin:8px 0 2px">test2 (↻ 17:00)</p>
+<div style="display:table;width:100%;margin-bottom:2px">
+<div style="display:table-cell;width:20px;font-size:10px;color:#BBB">S</div>
+<div style="display:table-cell"><div style="background:#444;border-radius:4px;height:8px"></div></div>
+<div style="display:table-cell;width:35px;text-align:right;font-size:10px;color:#BBB">0%</div>
+</div>
+<div style="display:table;width:100%;margin-bottom:4px">
+<div style="display:table-cell;width:20px;font-size:10px;color:#BBB">W</div>
+<div style="display:table-cell"><div style="background:#444;border-radius:4px;height:8px"><div style="background:#888;border-radius:4px;height:8px;width:33%"></div></div></div>
+<div style="display:table-cell;width:35px;text-align:right;font-size:10px;color:#BBB">33%</div>
+</div>
+<p style="font-size:9px;color:#999;margin:2px 0;padding-left:8px"><span style="color:#3b82f6">●</span> W: glm-5.2 (45req, 18.0%, 0.400%/req)</p>
+</div>
+
+<!-- ④ 앱 메인 -->
+<p style="font-size:15px;font-weight:700;color:#333;margin:20px 0 8px">④ 앱 메인 화면</p>
+<div style="background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:16px;margin-bottom:16px">
+<p style="font-size:18px;font-weight:700;color:#000;text-align:center;margin-bottom:12px">Ollama Cloud Quota</p>
+<div style="border:1px solid #ccc;border-radius:4px;padding:10px;text-align:center;font-size:14px;margin-bottom:16px;color:#333">+ 새 계정 추가</div>
+<div style="border:1px solid #e0e0e0;border-radius:8px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+<div style="display:table;width:100%;margin-bottom:8px">
+<div style="display:table-cell;font-size:16px;font-weight:700;color:#000">test1</div>
+<div style="display:table-cell;text-align:right;font-size:16px;color:#FF5252">🗑</div>
+</div>
+<div style="display:table;width:100%;margin-bottom:8px">
+<div style="display:table-cell;font-size:13px;color:#333">로그인됨</div>
+<div style="display:table-cell;text-align:right"><span style="border:1px solid #ccc;border-radius:4px;padding:4px 12px;font-size:12px;color:#333">로그인</span></div>
+</div>
+<p style="font-size:11px;color:#333;margin-bottom:8px">(초기화: 16:00)</p>
+<p style="font-size:13px;font-weight:700;color:#000;margin-bottom:4px">모델별 사용량</p>
+<p style="font-size:11px;color:#333;margin:4px 0"><span style="color:#018786">☑</span> 모델별 usage % 표시</p>
+<p style="font-size:11px;color:#333;margin:4px 0"><span style="color:#018786">☑</span> 모델별 request 수 표시</p>
+<p style="font-size:11px;color:#333;margin:4px 0 8px"><span style="color:#018786">☑</span> 모델별 usage/requests 비율 표시</p>
+<p style="font-size:11px;color:#333;margin:2px 0"><span style="color:#3b82f6">●</span> 세션: glm-5.2 (213req, 75.8%, 0.356%/req)</p>
+<p style="font-size:11px;color:#333;margin:2px 0"><span style="color:#4f46e5">●</span> 세션: deepseek-v4-pro (2req, 0.6%, 0.300%/req)</p>
+<p style="font-size:11px;color:#333;margin:2px 0"><span style="color:#22c55e">●</span> 주간: gemini-3-flash-preview (137req, 30.2%, 0.221%/req)</p>
+<p style="font-size:11px;color:#333;margin:2px 0 8px"><span style="color:#3b82f6">●</span> 주간: glm-5.2 (75req, 17.1%, 0.228%/req)</p>
+<hr style="border:0;border-top:1px solid #e0e0e0;margin:8px 0">
+<p style="font-size:13px;font-weight:700;color:#000;margin-bottom:4px">알림창 표시 설정</p>
+<p style="font-size:11px;color:#333;margin:4px 0"><span style="color:#018786">☑</span> 한줄 알림창 표시 (전체 중 최대 2개)</p>
+<p style="font-size:11px;color:#333;margin:4px 0"><span style="color:#018786">☑</span> 확장 알림창 표시 (제한 없음)</p>
+<p style="font-size:11px;color:#333;margin:4px 0 8px"><span style="color:#018786">☑</span> 할당량 초기화 시 알림 받기</p>
+<p style="font-size:12px;color:#333;margin:4px 0 8px">초기화 남은 시간 표시 방식: <span style="border:1px solid #ccc;padding:2px 8px;border-radius:4px;font-size:11px">남은 시간 ▾</span></p>
+<p style="font-size:13px;font-weight:700;color:#000;margin-bottom:4px">할당량 경고 설정</p>
+<div style="background:#f5f5f5;border-radius:4px;padding:8px;margin-bottom:4px">
+<div style="display:table;width:100%">
+<div style="display:table-cell;font-size:11px;color:#333"><span style="border:1px solid #ccc;padding:2px 6px;border-radius:4px">세션</span> 임계값: <span style="border:1px solid #ccc;padding:1px 4px;border-radius:2px">50</span>% <span style="color:#018786">● 켜짐</span></div>
+<div style="display:table-cell;text-align:right"><span style="color:#FF5252">🗑</span></div>
+</div>
+</div>
+<div style="border:1px solid #ccc;border-radius:4px;padding:6px;text-align:center;font-size:11px;color:#333;margin-bottom:8px">+ 알림 규칙 추가</div>
+</div>
+<div style="border:1px solid #ccc;border-radius:4px;padding:10px;text-align:center;font-size:14px;margin-bottom:16px;color:#333">전체 설정 저장</div>
+<hr style="border:0;border-top:1px solid #e0e0e0;margin:8px 0 16px">
+<p style="font-size:13px;font-weight:700;color:#000;margin-bottom:8px">자동 갱신 주기 설정</p>
+<div style="display:table;width:100%;margin-bottom:4px">
+<div style="display:table-cell;font-size:13px;color:#333"><span style="border:1px solid #ccc;padding:4px 8px;border-radius:4px;width:40px;display:inline-block;text-align:center">0</span> 시간 <span style="border:1px solid #ccc;padding:4px 8px;border-radius:4px;width:40px;display:inline-block;text-align:center">30</span> 분 <span style="border:1px solid #ccc;padding:4px 8px;border-radius:4px;width:40px;display:inline-block;text-align:center">0</span> 초</div>
+<div style="display:table-cell;text-align:right"><span style="border:1px solid #ccc;border-radius:4px;padding:4px 12px;font-size:12px;color:#333">적용</span></div>
+</div>
+<p style="font-size:12px;color:#018786;margin-bottom:16px">현재 갱신 주기: 30분</p>
+<div style="background:#018786;color:#fff;border-radius:6px;padding:14px;text-align:center;font-size:14px;margin-bottom:8px">상단 알림 켜기 (Foreground Service)</div>
+<p style="font-size:11px;color:#666;text-align:center;margin-bottom:16px">※ 팁: 상단 알림창의 바탕을 터치하면 즉시 새로고침됩니다.</p>
+<div style="display:table;width:100%;margin-bottom:8px">
+<div style="display:table-cell;font-size:14px;color:#333">핸드폰 재부팅 시 자동 시작</div>
+<div style="display:table-cell;text-align:right"><span style="display:inline-block;border:1px solid #ccc;border-radius:12px;padding:2px 8px;font-size:11px;color:#666">OFF</span></div>
+</div>
+</div>
+
+<h2 style="font-size:20px;color:#1a1a1a;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid #018786">✨ 주요 기능</h2>
+<table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:14px">
+<thead>
+<tr><th style="background:#018786;color:#fff;padding:10px 14px;text-align:left">기능</th><th style="background:#018786;color:#fff;padding:10px 14px;text-align:left">설명</th></tr>
+</thead>
+<tbody>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">홈화면 위젯</td><td style="padding:10px 14px;border-bottom:1px solid #eee">세션/주간 사용량을 progress bar로 표시</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">상단 고정 알림</td><td style="padding:10px 14px;border-bottom:1px solid #eee">접혀있을 땐 요약, 펼치면 계정별 상세</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">모델별 사용량</td><td style="padding:10px 14px;border-bottom:1px solid #eee">어떤 모델이 얼마나 썼는지 색 점과 함께 표시</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">모델별 usage %</td><td style="padding:10px 14px;border-bottom:1px solid #eee">각 모델이 전체 사용량 중 몇 %를 차지하는지</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">모델별 request 수</td><td style="padding:10px 14px;border-bottom:1px solid #eee">각 모델이 몇 번 요청했는지</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">모델별 usage/requests</td><td style="padding:10px 14px;border-bottom:1px solid #eee">1 request당 usage % — 비효율적인 모델 식별</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">표시 토글</td><td style="padding:10px 14px;border-bottom:1px solid #eee">위 3개 항목 각각 on/off 가능</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">멀티 계정</td><td style="padding:10px 14px;border-bottom:1px solid #eee">여러 Ollama 계정 동시 모니터링</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">할당량 경고 알림</td><td style="padding:10px 14px;border-bottom:1px solid #eee">세션/주간 임계값 도달 시 알림</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">세션 초기화 알림</td><td style="padding:10px 14px;border-bottom:1px solid #eee">세션이 리셋된 시점 알림</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">로그인 만료 알림</td><td style="padding:10px 14px;border-bottom:1px solid #eee">쿠키 만료 시 다시 로그인하라는 알림</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">WebView 로그인</td><td style="padding:10px 14px;border-bottom:1px solid #eee">앱 내에서 Ollama 로그인, 쿠키 자동 저장</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">부팅 시 자동 시작</td><td style="padding:10px 14px;border-bottom:1px solid #eee">폰 재부팅 후 자동으로 알림 시작 (옵션)</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">갱신 주기 설정</td><td style="padding:10px 14px;border-bottom:1px solid #eee">1초 ~ 24시간 자유 설정</td></tr>
+<tr><td style="padding:10px 14px;border-bottom:1px solid #eee;font-weight:700;color:#018786;white-space:nowrap">쿠키 암호화 저장</td><td style="padding:10px 14px;border-bottom:1px solid #eee">Android Keystore 기반 암호화로 안전하게 저장</td></tr>
+</tbody>
+</table>
+
+<h2 style="font-size:20px;color:#1a1a1a;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid #018786">📖 사용 방법</h2>
+
+<div style="background:#f0f7f7;border-left:4px solid #018786;padding:16px 20px;margin-bottom:16px;border-radius:0 8px 8px 0">
+<p style="font-size:16px;font-weight:700;margin-bottom:8px"><span style="display:inline-block;background:#018786;color:#fff;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-size:13px;margin-right:6px">1</span>설치</p>
+<ol style="padding-left:24px;font-size:14px">
+<li style="margin-bottom:4px">아래 링크에서 APK 파일을 다운로드합니다</li>
+<li style="margin-bottom:4px">폰의 파일 탐색기 앱으로 APK 파일을 실행합니다</li>
+<li style="margin-bottom:4px">"출처를 알 수 없는 앱" 경고가 나오면 설정에서 허용 후 설치합니다</li>
+</ol>
+</div>
+
+<div style="background:#f0f7f7;border-left:4px solid #018786;padding:16px 20px;margin-bottom:16px;border-radius:0 8px 8px 0">
+<p style="font-size:16px;font-weight:700;margin-bottom:8px"><span style="display:inline-block;background:#018786;color:#fff;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-size:13px;margin-right:6px">2</span>계정 추가 및 로그인</p>
+<ol style="padding-left:24px;font-size:14px">
+<li style="margin-bottom:4px">앱을 실행하고 <strong>"+ 새 계정 추가"</strong> 버튼을 누릅니다</li>
+<li style="margin-bottom:4px">추가된 계정 카드에서 <strong>"로그인"</strong> 버튼을 누릅니다</li>
+<li style="margin-bottom:4px">앱 내 웹창이 열리면 Ollama 계정으로 로그인합니다</li>
+<li style="margin-bottom:4px">로그인이 완료되면 자동으로 쿠키가 저장되고 웹창이 닫힙니다</li>
+</ol>
+</div>
+
+<div style="background:#f0f7f7;border-left:4px solid #018786;padding:16px 20px;margin-bottom:16px;border-radius:0 8px 8px 0">
+<p style="font-size:16px;font-weight:700;margin-bottom:8px"><span style="display:inline-block;background:#018786;color:#fff;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-size:13px;margin-right:6px">3</span>상단 알림 켜기</p>
+<ol style="padding-left:24px;font-size:14px">
+<li style="margin-bottom:4px">화면 하단의 <strong>"상단 알림 켜기"</strong> 버튼을 누릅니다</li>
+<li style="margin-bottom:4px">알림 권한 요청이 나오면 허용합니다</li>
+<li style="margin-bottom:4px">상단 알림바에 Ollama Quota가 고정됩니다</li>
+<li style="margin-bottom:4px">알림을 펼치면(아래로 드래그) 계정별 상세 사용량이 보입니다</li>
+</ol>
+</div>
+
+<div style="background:#f0f7f7;border-left:4px solid #018786;padding:16px 20px;margin-bottom:16px;border-radius:0 8px 8px 0">
+<p style="font-size:16px;font-weight:700;margin-bottom:8px"><span style="display:inline-block;background:#018786;color:#fff;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-size:13px;margin-right:6px">4</span>홈화면 위젯 추가</p>
+<ol style="padding-left:24px;font-size:14px">
+<li style="margin-bottom:4px">홈화면 빈 공간을 길게 누릅니다</li>
+<li style="margin-bottom:4px">"위젯" 메뉴 진입</li>
+<li style="margin-bottom:4px">"Ollama Quota" 위젯을 홈화면에 드래그합니다</li>
+<li style="margin-bottom:4px">위젯의 새로고침 버튼(↻)을 누르면 즉시 갱신됩니다</li>
+</ol>
+</div>
+
+<div style="background:#f0f7f7;border-left:4px solid #018786;padding:16px 20px;margin-bottom:16px;border-radius:0 8px 8px 0">
+<p style="font-size:16px;font-weight:700;margin-bottom:8px"><span style="display:inline-block;background:#018786;color:#fff;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-size:13px;margin-right:6px">5</span>모델별 사용량 확인</p>
+<ol style="padding-left:24px;font-size:14px">
+<li style="margin-bottom:4px">알림을 펼치거나 앱을 열면 각 계정 아래에 모델별 정보가 표시됩니다</li>
+<li style="margin-bottom:4px">앱의 계정 카드에서 체크박스 3개로 표시 항목을 on/off 합니다:</li>
+<ul style="padding-left:20px;font-size:14px;margin:4px 0">
+<li>☑ 모델별 usage % 표시</li>
+<li>☑ 모델별 request 수 표시</li>
+<li>☑ 모델별 usage/requests 비율 표시</li>
+</ul>
+<li style="margin-bottom:4px"><strong>"전체 설정 저장"</strong> 버튼을 눌러 적용합니다</li>
+</ol>
+</div>
+
+<div style="background:#f0f7f7;border-left:4px solid #018786;padding:16px 20px;margin-bottom:16px;border-radius:0 8px 8px 0">
+<p style="font-size:16px;font-weight:700;margin-bottom:8px"><span style="display:inline-block;background:#018786;color:#fff;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-size:13px;margin-right:6px">6</span>알림 규칙 설정</p>
+<ol style="padding-left:24px;font-size:14px">
+<li style="margin-bottom:4px">계정 카드의 <strong>"할당량 경고 설정"</strong>에서 <strong>"+ 알림 규칙 추가"</strong>를 누릅니다</li>
+<li style="margin-bottom:4px">세션/주간 선택, 임계값(%) 입력, 활성화 토글</li>
+<li style="margin-bottom:4px"><strong>"전체 설정 저장"</strong>으로 저장</li>
+<li style="margin-bottom:4px">임계값 도달 시 알림이 옵니다</li>
+</ol>
+</div>
+
+<div style="background:#f0f7f7;border-left:4px solid #018786;padding:16px 20px;margin-bottom:16px;border-radius:0 8px 8px 0">
+<p style="font-size:16px;font-weight:700;margin-bottom:8px"><span style="display:inline-block;background:#018786;color:#fff;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-size:13px;margin-right:6px">7</span>갱신 주기 변경</p>
+<ol style="padding-left:24px;font-size:14px">
+<li style="margin-bottom:4px">메인 화면의 "자동 갱신 주기 설정"에서 시간/분/초 입력</li>
+<li style="margin-bottom:4px"><strong>"적용"</strong> 버튼 누름</li>
+<li style="margin-bottom:4px">기본값은 30분, 최소 1초</li>
+</ol>
+</div>
+
+<h2 style="font-size:20px;color:#1a1a1a;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid #018786">⚠️ 주의사항</h2>
+<ul style="list-style:none;padding-left:0;font-size:14px">
+<li style="padding:8px 0 8px 28px;border-bottom:1px solid #f0f0f0">⚠️ <strong style="color:#c62828">Ollama Cloud 계정 필요</strong> — 이 앱은 Ollama Cloud 사용자를 위한 모니터링 도구입니다. 로컬 Ollama와는 무관합니다.</li>
+<li style="padding:8px 0 8px 28px;border-bottom:1px solid #f0f0f0">⚠️ <strong style="color:#c62828">WebView 로그인 방식</strong> — 공식 API가 없어 쿠키 기반 스크래핑을 사용합니다. ollama.com 사이트 구조가 변경되면 일시적으로 작동하지 않을 수 있습니다.</li>
+<li style="padding:8px 0 8px 28px;border-bottom:1px solid #f0f0f0">⚠️ <strong style="color:#c62828">로그인 만료</strong> — 세션이 만료되면 "로그인 만료" 알림이 옵니다. 계정 카드에서 다시 로그인 버튼을 눌러주세요.</li>
+<li style="padding:8px 0 8px 28px;border-bottom:1px solid #f0f0f0">⚠️ <strong style="color:#c62828">쿠키 암호화 저장</strong> — 로그인 정보는 안드로이드 암호화 저장소(EncryptedSharedPreferences)에 저장되어 평문으로 노출되지 않습니다.</li>
+<li style="padding:8px 0 8px 28px;border-bottom:1px solid #f0f0f0">⚠️ <strong style="color:#c62828">갱신 주기</strong> — 너무 짧게 설정하면 배터리 소모가 크고 ollama.com 서버에 부담을 줍니다. 15분~30분을 권장합니다.</li>
+<li style="padding:8px 0 8px 28px;border-bottom:1px solid #f0f0f0">⚠️ <strong style="color:#c62828">알림 확장 뷰 제한</strong> — 안드로이드 시스템 제한(252dp)으로 알림 확장 시 모델이 많으면 usage 기준 상위 2개만 표시됩니다. 전체 모델 목록은 앱에서 확인하세요.</li>
+<li style="padding:8px 0 8px 28px;border-bottom:1px solid #f0f0f0">⚠️ <strong style="color:#c62828">한줄 알림 최대 2개</strong> — 상단 알림 접힌 상태에서는 2개 계정까지만 표시됩니다 (안드로이드 제한).</li>
+<li style="padding:8px 0 8px 28px;border-bottom:1px solid #f0f0f0">⚠️ <strong style="color:#c62828">부팅 시 자동 시작</strong> — "핸드폰 재부팅 시 자동 시작" 스위치를 켜면 폰 재부팅 후 자동으로 알림이 시작됩니다.</li>
+<li style="padding:8px 0 8px 28px;border-bottom:1px solid #f0f0f0">⚠️ <strong style="color:#c62828">출처 불명 경고</strong> — Play Store가 아닌 APK 직접 설치이므로 설치 시 경고가 나옵니다. 정상적인 앱이니 허용하시면 됩니다.</li>
+<li style="padding:8px 0 8px 28px">⚠️ <strong style="color:#c62828">Android 8.0 이상 필요</strong> — Android 8.0 (Oreo) 이상에서만 작동합니다.</li>
+</ul>
+
+<h2 style="font-size:20px;color:#1a1a1a;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid #018786">🛡️ 설치 전 보안 검증 안내</h2>
+
+<div style="background:#fff3e0;border:2px solid #ff9800;border-radius:12px;padding:24px;margin:16px 0">
+<p style="font-size:18px;color:#e65100;font-weight:700;margin-bottom:12px">⚠️ 타인이 만든 APK 파일을 설치하기 전에 반드시 확인하세요</p>
+<p style="font-size:14px;color:#5d4037;margin-bottom:12px;line-height:1.7">
+최근 커뮤니티에서 누군가 앱을 만들어 공유하면서 APK 파일 내부에 <strong>악성코드를 심어놓은 사례</strong>가 있었습니다. 겉보기엔 정상적인 앱처럼 동작하지만, 백그라운드에서 개인정보를 탈취하거나 광고를 띄우는 코드가 숨겨져 있을 수 있습니다. <strong>아무리 신뢰할 수 있는 출처라도, APK 파일을 설치하기 전에는 반드시 아래 검증 과정을 거치는 것을 권장합니다.</strong>
+</p>
+
+<p style="font-size:16px;color:#e65100;font-weight:700;margin:16px 0 8px">📋 설치 전 확인해야 할 것</p>
+<ul style="list-style:none;padding-left:0;font-size:14px;color:#5d4037">
+<li style="padding:6px 0 6px 28px">✅ <strong>소스코드 확인</strong> — 개발자가 GitHub 등에 소스코드를 공개했는지 확인하세요. 소스코드가 공개되어 있다면, 다른 사람이 이미 검토한 코드입니다. 이 앱의 소스코드는 <a href="https://github.com/hatemushroomfk-collab/OllamaQuotaWidget" style="color:#018786">GitHub</a>에서 누구나 열람 가능합니다.</li>
+<li style="padding:6px 0 6px 28px">✅ <strong>AI 보안 검사</strong> — APK 파일을 <a href="https://www.virustotal.com" style="color:#018786">VirusTotal</a>에 업로드해서 70개 이상의 백신 엔진으로 검사받으세요. 악성코드가 감지되면 절대 설치하지 마세요.</li>
+<li style="padding:6px 0 6px 28px">✅ <strong>백신 앱으로 검사</strong> — 폰에 설치된 백신 앱(Play Protect, McAfee, Kaspersky 등)으로 다운로드한 APK 파일을 스캔하세요.</li>
+<li style="padding:6px 0 6px 28px">✅ <strong>권한 확인</strong> — 설치 시 요청하는 권한이 앱 기능에 맞는지 확인하세요. 이 앱이 요청하는 권한은: 인터넷, 알림, 포그라운드 서비스, 부팅 완료 — 이 4개뿐입니다. 연락처 접근, SMS, 위치 정보 등 불필요한 권한을 요구하면 의심해야 합니다.</li>
+<li style="padding:6px 0 6px 28px">✅ <strong>APK 디컴파일</strong> — 기술적 지식이 있다면 jadx 같은 도구로 APK를 디컴파일해서 내부 코드를 직접 확인할 수 있습니다. 악성코드는 보통 난독화되어 있으므로, 난독화 여부도 참고하세요.</li>
+<li style="padding:6px 0 6px 28px">✅ <strong>커뮤니티 피드백</strong> — 다른 사용자들의 댓글과 피드백을 확인하세요. "이상한 알림이 떠요", "배터리가 갑자기 빨리 닳아요" 같은 제보가 있으면 주의해야 합니다.</li>
+</ul>
+
+<p style="font-size:16px;color:#e65100;font-weight:700;margin:16px 0 8px">🔍 이 앱의 보안 조치</p>
+<ul style="list-style:none;padding-left:0;font-size:14px;color:#5d4037">
+<li style="padding:6px 0 6px 28px">✅ <strong>소스코드 100% 공개</strong> — GitHub에서 모든 코드를 열람하고 검토할 수 있습니다</li>
+<li style="padding:6px 0 6px 28px">✅ <strong>쿠키 암호화 저장</strong> — 로그인 정보(쿠키)를 Android Keystore 기반 암호화 저장소에 보관합니다</li>
+<li style="padding:6px 0 6px 28px">✅ <strong>최소 권한 원칙</strong> — 앱 기능에 필요한 4개 권한만 요청합니다</li>
+<li style="padding:6px 0 6px 28px">✅ <strong>WebView 화이트리스트</strong> — 로그인 웹창은 ollama.com, Google, GitHub만 허용합니다</li>
+<li style="padding:6px 0 6px 28px">✅ <strong>백업 차단</strong> — ADB 백업으로 앱 데이터가 추출되지 않도록 차단되어 있습니다</li>
+</ul>
+
+<p style="font-size:13px;color:#888;margin-top:16px">💡 <strong>요약:</strong> 아무리 좋아 보이는 앱이라도, 소스코드가 공개되어 있고 백신 검사를 통과한 앱만 설치하세요. 한 번 감염되면 개인정보, 계정, 금융 정보까지 노출될 수 있습니다.</p>
+</div>
+
+<h2 style="font-size:20px;color:#1a1a1a;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid #018786">📥 다운로드</h2>
+<div style="background:#f0f7f7;border:2px solid #018786;border-radius:12px;padding:24px;margin:16px 0;text-align:center">
+<p style="font-size:18px;margin-bottom:12px">APK 다운로드</p>
+<a href="https://drive.proton.me/urls/DPKADAHY38#S8d6f4o0SfeR" target="_blank" style="display:inline-block;padding:12px 32px;background:#018786;color:#fff;text-decoration:none;border-radius:8px;font-size:16px;font-weight:700">📦 APK 다운로드</a>
+</div>
+
+<h2 style="font-size:20px;color:#1a1a1a;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid #018786">🔗 GitHub 저장소</h2>
+<div style="background:#f0f7f7;border:2px solid #018786;border-radius:12px;padding:24px;margin:16px 0;text-align:center">
+<p style="font-size:18px;margin-bottom:12px">소스코드 (누구나 검토 가능)</p>
+<a href="https://github.com/hatemushroomfk-collab/OllamaQuotaWidget" target="_blank" style="display:inline-block;padding:12px 32px;background:#333;color:#fff;text-decoration:none;border-radius:8px;font-size:16px;font-weight:700">🔧 GitHub에서 보기</a>
+</div>
+
+<h2 style="font-size:20px;color:#1a1a1a;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid #018786">📋 최소 요구사항</h2>
+<table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:14px">
+<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:700;width:120px;color:#555">OS</td><td style="padding:8px 14px;border-bottom:1px solid #eee">Android 8.0 (API 26) 이상</td></tr>
+<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:700;color:#555">계정</td><td style="padding:8px 14px;border-bottom:1px solid #eee">Ollama Cloud 계정</td></tr>
+<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:700;color:#555">권한</td><td style="padding:8px 14px;border-bottom:1px solid #eee">인터넷, 알림, 포그라운드 서비스, 부팅 완료</td></tr>
+</table>
+
+<h2 style="font-size:20px;color:#1a1a1a;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid #018786">🛠 기술 스택</h2>
+<div style="margin-bottom:24px">
+<span style="display:inline-block;padding:4px 12px;background:#e0e0e0;border-radius:16px;font-size:13px;color:#333;margin:0 4px 4px 0">Kotlin</span>
+<span style="display:inline-block;padding:4px 12px;background:#e0e0e0;border-radius:16px;font-size:13px;color:#333;margin:0 4px 4px 0">Coroutines</span>
+<span style="display:inline-block;padding:4px 12px;background:#e0e0e0;border-radius:16px;font-size:13px;color:#333;margin:0 4px 4px 0">Jsoup</span>
+<span style="display:inline-block;padding:4px 12px;background:#e0e0e0;border-radius:16px;font-size:13px;color:#333;margin:0 4px 4px 0">EncryptedSharedPreferences</span>
+<span style="display:inline-block;padding:4px 12px;background:#e0e0e0;border-radius:16px;font-size:13px;color:#333;margin:0 4px 4px 0">RemoteViews</span>
+<span style="display:inline-block;padding:4px 12px;background:#e0e0e0;border-radius:16px;font-size:13px;color:#333;margin:0 4px 4px 0">ConcurrentHashMap</span>
+</div>
+
+<h2 style="font-size:20px;color:#1a1a1a;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid #018786">💻 개발 환경</h2>
+<table style="width:100%;border-collapse:collapse;margin-bottom:24px;font-size:14px">
+<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:700;width:120px;color:#555">1차 제작</td><td style="padding:8px 14px;border-bottom:1px solid #eee">Antigravity + Gemini 3.1 Pro</td></tr>
+<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:700;color:#555">2차 패치</td><td style="padding:8px 14px;border-bottom:1px solid #eee">Hermes Agent + GLM 5.2 (Ollama Cloud)</td></tr>
+<tr><td style="padding:8px 14px;border-bottom:1px solid #eee;font-weight:700;color:#555">테스트 환경</td><td style="padding:8px 14px;border-bottom:1px solid #eee">Samsung Galaxy S25 Ultra</td></tr>
+</table>
+
+<h2 style="font-size:20px;color:#1a1a1a;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid #018786">📋 테스트 한계 안내</h2>
+<div style="border-left:4px solid #ff9800;background:#fff8e1;padding:16px 20px;margin-bottom:16px;border-radius:0 8px 8px 0">
+<p style="font-size:14px;color:#5d4037;line-height:1.7">
+필자가 보유한 Ollama 계정이 <strong>Google 계정 하나뿐</strong>이라, GitHub 로그인 / 이메일 로그인 등 <strong>다른 로그인 방식은 테스트하지 못했습니다.</strong><br><br>
+로그인 방식에 따라 쿠키 구조가 다를 수 있어, Google 계정 외의 로그인에서 정상 작동하지 않을 수 있습니다. 문제가 발생하면 댓글로 알려주시면 최대한 대응하겠습니다.
+</p>
+</div>
+
+<h2 style="font-size:20px;color:#1a1a1a;margin:24px 0 12px;padding-bottom:8px;border-bottom:2px solid #018786">📝 후기</h2>
+<div style="border-left:4px solid #6200EE;background:#f3f0ff;padding:16px 20px;margin-bottom:16px;border-radius:0 8px 8px 0">
+<p style="font-size:14px;color:#333;line-height:1.8">
+이 어플은 안티그래비티로 만든 내 첫 바이브 코딩 결과물이었음.<br><br>
+아쉬운 점은 모델별 사용량이 보이지 않는 점이었는데, Gemini 3.1 Pro가 <strong>"방법이 없다, 절대 불가능하다"</strong>고 해서 그냥저냥 만족하고 썼다가, 이번 주 Ollama 투배럭을 거의 못 써서 할당량 녹일 겸 <strong>"헤르메스로 GLM 5.2를 이용해서 다시 시도해볼까?"</strong>라는 생각으로 시작한 두 번째 바이브코딩임.<br><br>
+근데 시발 안티그래비티에서 Gemini 3.1 Pro로 <strong>4시간 동안 씨름했다가 포기한</strong> 모델별 사용량 기능을 <strong>GLM 5.2는 바로 만들어주더라</strong> ㅋㅋ<br><br>
+바이브 코딩에 문외한에다가 내가 알기론 헤르메스가 전용 코딩 프로그램은 아닌 걸로 알고 있어서 어플의 완성도가 미숙할 수도 있음.<br><br>
+항상 챗붕이들에게 받기만 해서 이번엔 나도 뭔가를 줘보고자 올림.<br>
+<strong>고마워!</strong> 🙏
+</p>
+</div>
+
+<p style="text-align:center;color:#999;font-size:13px;margin-top:24px;padding-top:16px;border-top:1px solid #eee">
+Ollama Quota Widget · MIT License
+</p>
+
+</div>

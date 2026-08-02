@@ -410,9 +410,9 @@ class MainActivity : AppCompatActivity() {
             val hStr = etHours.text.toString()
             val mStr = etMins.text.toString()
             val sStr = etSecs.text.toString()
-            val h = if (hStr.isEmpty()) 0L else hStr.toLong()
-            val m = if (mStr.isEmpty()) 0L else mStr.toLong()
-            val s = if (sStr.isEmpty()) 0L else sStr.toLong()
+            val h = hStr.toLongOrNull() ?: 0L
+            val m = mStr.toLongOrNull() ?: 0L
+            val s = sStr.toLongOrNull() ?: 0L
 
             val totalMs = (h * 3600 + m * 60 + s) * 1000
             if (totalMs < 1000) {
