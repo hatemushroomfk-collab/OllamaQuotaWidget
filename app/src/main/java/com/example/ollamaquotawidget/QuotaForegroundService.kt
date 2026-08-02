@@ -1,5 +1,6 @@
 package com.example.ollamaquotawidget
 
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -27,7 +28,6 @@ class QuotaForegroundService : Service() {
     private val ALERT_CHANNEL_ID = "OllamaAlertChannel"
     private val NOTIFICATION_ID = 1
     private val scope = CoroutineScope(Dispatchers.IO + Job())
-    private var updateJob: Job? = null
     // Serializes updateQuota() so periodic updates and FORCE_REFRESH cannot run simultaneously.
     private val updateMutex = Mutex()
 
@@ -37,6 +37,8 @@ class QuotaForegroundService : Service() {
 
     companion object {
         const val ACTION_FORCE_REFRESH = "ACTION_FORCE_REFRESH"
+        // Request code for the AlarmManager periodic update alarm.
+        private const val ALARM_REQUEST_CODE = 1001
         // Notification ID segments are 64K-aligned (stride 0x10000 = 65536) so the
         // 16-bit hash (hashCode and 0xFFFF) can never collide across categories:
         // quota alerts 1000..66535, reset alerts 66536..132071, login alerts 132072..198607.
@@ -67,9 +69,7 @@ class QuotaForegroundService : Service() {
             } else {
                 startForeground(NOTIFICATION_ID, refreshNotif)
             }
-            scope.launch {
-                updateQuota()
-            }
+            runUpdate()
         } else {
             val emptyList = emptyList<Account>()
             val loadingNotif = buildNotification(emptyList)
@@ -85,13 +85,62 @@ class QuotaForegroundService : Service() {
     }
 
     private fun startPeriodicUpdates() {
-        updateJob?.cancel()
-        updateJob = scope.launch {
-            while (isActive) {
+        // Perform the first update right away; AlarmManager takes over from there.
+        runUpdate()
+    }
+
+    private fun runUpdate() {
+        scope.launch {
+            try {
                 updateQuota()
-                val intervalMs = SessionManager.getUpdateInterval(this@QuotaForegroundService)
-                delay(if (intervalMs < 1000) 1000 else intervalMs)
+            } finally {
+                // Always schedule the next alarm while the service is active so the
+                // interval stays fresh from SessionManager even if an update fails.
+                if (isActive) scheduleNextAlarm()
             }
+        }
+    }
+
+    private fun scheduleNextAlarm() {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intervalMs = SessionManager.getUpdateInterval(this)
+        val triggerAtMs = System.currentTimeMillis() + intervalMs.coerceAtLeast(1000)
+
+        val canScheduleExact = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            alarmManager.canScheduleExactAlarms()
+        } else {
+            true
+        }
+        val pendingIntent = buildAlarmPendingIntent()
+        try {
+            if (canScheduleExact) {
+                // Exact alarm that fires even while the device is in Doze mode.
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
+            } else {
+                // SCHEDULE_EXACT_ALARM not granted: inexact alarm still fires in Doze.
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
+            }
+        } catch (e: SecurityException) {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
+        }
+    }
+
+    private fun cancelScheduledAlarm() {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        alarmManager.cancel(buildAlarmPendingIntent())
+    }
+
+    private fun buildAlarmPendingIntent(): PendingIntent {
+        val alarmIntent = Intent(this, QuotaForegroundService::class.java).apply {
+            action = ACTION_FORCE_REFRESH
+        }
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Start the service as a foreground service so the update can run even if
+            // the service was killed while the screen was off.
+            PendingIntent.getForegroundService(this, ALARM_REQUEST_CODE, alarmIntent, flags)
+        } else {
+            PendingIntent.getService(this, ALARM_REQUEST_CODE, alarmIntent, flags)
         }
     }
 
@@ -287,7 +336,11 @@ class QuotaForegroundService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
-    override fun onDestroy() { super.onDestroy(); scope.cancel() }
+    override fun onDestroy() {
+        cancelScheduledAlarm()
+        scope.cancel()
+        super.onDestroy()
+    }
     
     private fun calculateResetTimestamp(resetString: String): Long {
         var ms = 0L
